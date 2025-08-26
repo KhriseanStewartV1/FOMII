@@ -1,0 +1,97 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:fomo_connect/router.dart';
+import 'package:fomo_connect/src/database/bootstrap/bootstrap.dart';
+import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
+import 'package:fomo_connect/src/database/provider/dark_mode.dart';
+import 'package:fomo_connect/src/database/provider/post_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+Future<void> initLocalNotifications() async {
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher'); // your app icon
+
+  const InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+  );
+
+  await FlutterLocalNotificationsPlugin().initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse response) {
+      // Optional: navigate to your notifications screen
+      // Navigator.pushNamed(context, AppRouter.notifications);
+    },
+  );
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initFirebase();
+  // await initLocalNotifications();
+  //FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => PostProvider()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
+}
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  RemoteNotification? notification = message.notification;
+
+  if (notification != null) {
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'FOMII Connect', // channel id
+          'Fomo Notifications', // channel name
+          importance: Importance.high,
+          priority: Priority.high,
+        );
+
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
+    );
+
+    await FlutterLocalNotificationsPlugin().show(
+      notification.hashCode,
+      notification.title,
+      notification.body,
+      platformDetails,
+    );
+  }
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService().terminatedApp(context);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'FOMII - The Social App',
+      theme: Provider.of<ThemeProvider>(context).themeData,
+      routes: AppRouter.routes,
+      initialRoute: AppRouter.authWrapper,
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}

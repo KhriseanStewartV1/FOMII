@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Rules for user documents
+    match /users/{userId} {
+      // Anyone authenticated can read user data
+      allow read: if request.auth != null;
+
+      // Only the owner can update their own user document
+      allow write: if request.auth != null;
+      
+      // Optional: further restrict specific fields
+      // For example, allow only updates to 'following' and 'followers' fields
+      allow update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['following', 'followers']);
+    }
+
+    // Rules for posts
+    match /posts/{postId} {
+      // Anyone authenticated can read posts
+      allow read: if request.auth != null;
+
+      // You might restrict who can write posts; for now, allow all authenticated
+      allow write: if request.auth != null;
+    }
+
+    // Default deny for all other paths
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

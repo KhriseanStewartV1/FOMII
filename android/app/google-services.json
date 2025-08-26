@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "625047258752",
+    "project_id": "fomo-connect",
+    "storage_bucket": "fomo-connect.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:625047258752:android:f8894fe16faebd00904865",
+        "android_client_info": {
+          "package_name": "com.example.fomo_connect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "625047258752-hk1nqdrtvmq0v2l60qrdnip66m4t3s13.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fomo_connect",
+            "certificate_hash": "a27769d953e47234c3325f5af285f356d57294dd"
+          }
+        },
+        {
+          "client_id": "625047258752-ntabr0r1lmp3tsa3cblnu0fem0itorl4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCU8jpM_NI4I2F1h1zEqXZzOro8bSfefHA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "625047258752-ntabr0r1lmp3tsa3cblnu0fem0itorl4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "625047258752-6mjod1ecqibk1m2oll4lec57a5vot7td.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fomoConnect"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
