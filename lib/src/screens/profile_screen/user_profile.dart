@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
@@ -36,7 +37,7 @@ class _UserProfileState extends State<UserProfile>
     getCount();
     String uid = FirebaseAuth.instance.currentUser!.uid;
     getIsFollowing(uid);
-    checkStatus();
+    // checkStatus();
   }
 
   void getIsFollowing(String uid) async {
@@ -78,53 +79,66 @@ class _UserProfileState extends State<UserProfile>
     }
   }
 
-  void checkStatus() async {
-    final userData = await UserServices().readUser(widget.user['userId']);
-    try {
-      if (userData!['status'] != null) {
+  Future<void> followUnfollowUser() async {
+    String followMessage = '';
+    String message = '';
+    {
+      try {
+        message = await UserServices().followingSystem(
+          widget.user['userId'],
+          isFollowing,
+        );
         setState(() {
-          status = true;
+          isFollowing = !isFollowing;
+          followMessage = message;
         });
-      } else {
-        status = false;
+        if (isFollowing) {
+          await NotificationService.sendPushNotificationv2(
+            deviceToken: widget.user['token'],
+            title: "New Follower",
+            body:
+                "${FirebaseAuth.instance.currentUser!.displayName} started following you.",
+          );
+        }
+        displayRoundedSnackBar(context, followMessage);
+      } catch (e) {
+        displayRoundedSnackBar(context, "An Error Happened");
+      } finally {
+        setState(() {
+          followMessage = '';
+        });
       }
-    } catch (e) {
-      print(e);
     }
+    ;
   }
+
+  // void checkStatus() async {
+  //   final userData = await UserServices().readUser(widget.user['userId']);
+  //   try {
+  //     if (userData!['status'] != null) {
+  //       setState(() {
+  //         status = true;
+  //       });
+  //     } else {
+  //       status = false;
+  //     }
+  //   } catch (e) {
+  //     print(e);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
-    String followMessage = '';
-    String message = '';
     final userName = widget.user['name'];
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'Profile',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 22),
         ),
         actions: [
           MaterialButton(
-            onPressed: () async {
-              try {
-                message = await UserServices().followingSystem(
-                  widget.user['userId'],
-                  isFollowing,
-                );
-                setState(() {
-                  isFollowing = !isFollowing;
-                  followMessage = message;
-                });
-                displayRoundedSnackBar(context, followMessage);
-              } catch (e) {
-                displayRoundedSnackBar(context, "An Error Happened");
-              } finally {
-                setState(() {
-                  followMessage = '';
-                });
-              }
-            },
+            onPressed: followUnfollowUser,
             color: isFollowing ? Colors.grey : Colors.lightBlueAccent,
             focusColor: Colors.white,
             child: Text(
@@ -241,10 +255,7 @@ class _UserProfileState extends State<UserProfile>
           children: [
             GestureDetector(
               onLongPress: () {
-                _openFullScreenImage(
-                  context,
-                  'https://operaparallele.org/wp-content/uploads/2023/09/Placeholder_Image.png',
-                );
+                _openFullScreenImage(context, doc['profilePic']);
               },
               child: _buildPicCard(context),
             ),

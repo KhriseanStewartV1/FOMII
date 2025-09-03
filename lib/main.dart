@@ -5,6 +5,9 @@ import 'package:fomo_connect/src/database/bootstrap/bootstrap.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/provider/dark_mode.dart';
 import 'package:fomo_connect/src/database/provider/post_provider.dart';
+import 'package:fomo_connect/theme.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -28,8 +31,8 @@ Future<void> initLocalNotifications() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initFirebase();
-  // await initLocalNotifications();
-  //FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  final dir = await getApplicationDocumentsDirectory();
+  Hive.init(dir.path);
   runApp(
     MultiProvider(
       providers: [
@@ -89,8 +92,9 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'FOMII - The Social App',
       theme: Provider.of<ThemeProvider>(context).themeData,
+      darkTheme: darkMode,
       routes: AppRouter.routes,
-      initialRoute: AppRouter.authWrapper,
+      initialRoute: AppRouter.splash,
       debugShowCheckedModeBanner: false,
     );
   }

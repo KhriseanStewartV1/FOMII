@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/router.dart';
@@ -68,29 +69,48 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   googleSignIn() async {
     try {
-      bool check = await AuthService().signInWithGoogle(context);
-      final uniqueId = await UserServices().generateUniqueId(
-        FirebaseAuth.instance.currentUser!.displayName!,
-        checkUniqueIdExists,
+      UserCredential? userCredential = await AuthService().signInWithGoogle(
+        context,
       );
-      final createUser = await UserServices().createUser(
-        UserModal(
-          userId: FirebaseAuth.instance.currentUser!.uid,
-          name: FirebaseAuth.instance.currentUser!.displayName!,
-          profilePic: '',
-          createdAt: DateTime.now(),
-          email: FirebaseAuth.instance.currentUser!.email,
-          bio: '',
-          uniqueId: uniqueId,
-        ),
-      );
-      if (check && createUser) {
-        Navigator.pushReplacementNamed(context, AppRouter.authWrapper);
+      if (userCredential != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .get();
+        if (!userDoc.exists) {
+          //create user in firestore
+          final user = FirebaseAuth.instance.currentUser!;
+          final uniqueId = await UserServices().generateUniqueId(
+            user.displayName!,
+            checkUniqueIdExists,
+          );
+
+          final createUser = await UserServices().createUser(
+            UserModal(
+              userId: user.uid,
+              name: user.displayName!,
+              profilePic: '',
+              createdAt: DateTime.now(),
+              email: user.email,
+              bio: '',
+              uniqueId: uniqueId,
+            ),
+          );
+
+          if (createUser == true) {
+            Navigator.pushReplacementNamed(context, AppRouter.authWrapper);
+          } else {
+            displaySnackBar(context, "Failed to create user in Firestore");
+          }
+        } else {
+          displaySnackBar(context, "Google sign-in failed");
+        }
       } else {
-        displaySnackBar(context, "Error Happened");
+        Navigator.pushReplacementNamed(context, AppRouter.authWrapper);
       }
     } catch (e) {
       print(e);
+      displaySnackBar(context, "Error: $e");
     }
   }
 
@@ -208,7 +228,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Icon(Icons.g_mobiledata, size: 30),
                         Text(
                           "Google",
                           style: GoogleFonts.poppins(
@@ -235,10 +254,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       },
                       child: Text(
                         "Log In!",
-                        style: GoogleFonts.poppins(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],

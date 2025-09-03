@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/src/database/firebase/chat/chat_service.dart';
-import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/modal/indox_modal.dart';
 import 'package:fomo_connect/src/screens/inbox_screen/chat_screen.dart';
@@ -25,8 +24,6 @@ class _InboxScreenState extends State<InboxScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _getDeviceToken();
-    print(FirebaseAuth.instance.currentUser!.uid);
   }
 
   String getRelativeTime(dynamic timestamp) {
@@ -44,12 +41,6 @@ class _InboxScreenState extends State<InboxScreen> {
 
   Future<void> refresh() async {
     setState(() {});
-  }
-
-  void _getDeviceToken() async {
-    NotificationService().pushToken(uid);
-    bool status = await NotificationService().requestNotificationPermission();
-    print(status);
   }
 
   String uid = FirebaseAuth.instance.currentUser!.uid;
@@ -74,7 +65,7 @@ class _InboxScreenState extends State<InboxScreen> {
                     "Inbox",
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 22,
                     ),
                   ),
                   IconButton(
@@ -90,7 +81,6 @@ class _InboxScreenState extends State<InboxScreen> {
                 child: StreamBuilder<List<InboxItem>>(
                   stream: ChatService().listInboxV2(),
                   builder: (context, snapshot) {
-                    print("current UID: $uid");
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: LoadingScreen());
                     }
@@ -111,7 +101,6 @@ class _InboxScreenState extends State<InboxScreen> {
                         String lastMessage = getRelativeTime(
                           chatDoc.lastMessageAt,
                         );
-                        print(lastMessage);
                         return FutureBuilder<String>(
                           future: nameFuture,
                           builder: (context, nameSnapshot) {
@@ -162,13 +151,20 @@ class _InboxScreenState extends State<InboxScreen> {
             children: [
               Text(
                 "Mutual Followers",
-                style: Theme.of(context).textTheme.titleLarge,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
               SizedBox(height: 20),
               TextFormField(
                 controller: _uIdSearchController,
                 keyboardType: TextInputType.text,
                 decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 0,
+                    horizontal: 10,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -264,7 +260,6 @@ class _InboxScreenState extends State<InboxScreen> {
               return GestureDetector(
                 onTap: () {
                   if (followerId != null) {
-                    print(follower.id);
                     Navigator.push(
                       context,
                       MaterialPageRoute(

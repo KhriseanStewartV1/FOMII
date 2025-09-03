@@ -6,6 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/database/provider/post_provider.dart';
@@ -13,6 +15,7 @@ import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/screens/profile_screen/user_profile.dart';
 import 'package:fomo_connect/src/widgets/constants.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/widgets/mention_text_field.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -57,12 +60,10 @@ Future<DocumentSnapshot?> _getProfile(String userId) async {
 
 class _PostWidgetState extends State<PostWidget> {
   bool isFollowing = false;
+
   void userComment() async {
     final commentText = _commentController.text.trim();
     if (commentText.isEmpty) return;
-
-    // Ensure you have access to the 'data' for user info
-    // You can pass it as a parameter or manage it accordingly
     final userData = await UserServices().readUser(uid);
     if (userData == null) return; // handle error if needed
 
@@ -74,7 +75,8 @@ class _PostWidgetState extends State<PostWidget> {
       userData['name'],
       widget.post.uuid,
     );
-
+    await NotificationService.sendPushNotificationv2(deviceToken: userData['token'], title: "${userData['name']} left a comment", body: commentText);
+  HapticFeedback.lightImpact();
     _commentController.clear(); // Clear input after sending
     setState(() {}); // Optional, refresh UI if needed
   }
@@ -98,7 +100,7 @@ class _PostWidgetState extends State<PostWidget> {
             textAlign: TextAlign.start,
             overflow: TextOverflow.ellipsis,
             widget.post.postText,
-            style: GoogleFonts.poppins(fontSize: 15),
+            style: GoogleFonts.poppins(fontSize: 13),
           ),
           if (size.width < 361)
             _buildSmallerBottomPostBar(widget.post)
@@ -199,6 +201,7 @@ class _PostWidgetState extends State<PostWidget> {
                 context,
                 listen: false,
               ).toggleLike(post.uuid, uid, context);
+              HapticFeedback.lightImpact();
             },
             child: _buildBottomPostOptions(
               "${likesCount == 0 ? 'Like' : likesCount}",
@@ -232,6 +235,7 @@ class _PostWidgetState extends State<PostWidget> {
                 context,
                 listen: false,
               ).toggleRepost(post.uuid, uid, context);
+              HapticFeedback.lightImpact();
             },
             child: _buildBottomPostOptions(
               "${repostsCount == 0 ? 'Repost' : repostsCount}",
@@ -351,14 +355,12 @@ class _PostWidgetState extends State<PostWidget> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextField(
+                      child: MentionTextField(
                         controller: _commentController,
-                        decoration: InputDecoration(
-                          hintText: "Add a comment...",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+                        text: "Add a comment...",
+                        onMentionSelected: (String mention) {
+                          print("Mention selected: $mention");
+                        },
                       ),
                     ),
                     IconButton(
@@ -428,7 +430,7 @@ class _PostWidgetState extends State<PostWidget> {
                     Text(
                       name,
                       style: GoogleFonts.poppins(
-                        fontSize: 18,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -438,7 +440,7 @@ class _PostWidgetState extends State<PostWidget> {
                 Text(
                   comment, // Replace with actual message
                   style: GoogleFonts.poppins(
-                    fontSize: 15,
+                    fontSize: 12,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -481,38 +483,52 @@ class _PostWidgetState extends State<PostWidget> {
     return FutureBuilder<DocumentSnapshot?>(
       future: _getProfile(post.userId),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Row(
+        if (!snapshot.hasData || snapshot.data == null) {
+          return Column(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Colors.grey[600]),
-              ),
-              SizedBox(width: 10),
-              Column(
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                spacing: 20,
                 children: [
-                  Container(width: 80, height: 12, color: Colors.grey[300]),
-                  SizedBox(height: 4),
-                  Container(width: 50, height: 10, color: Colors.grey[200]),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 48,
+                        width: 48,
+                        child: ClipRRect(
+                          borderRadius: BorderRadiusGeometry.circular(100),
+                          child: Center(child: Icon(Icons.person)),
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 4,
+                        children: [
+                          Text(
+                            'Username',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            getRelativeTime(post.timestamp),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ],
               ),
+              // SizedBox(height: 5),
             ],
-          );
-        }
-        if (!snapshot.hasData || snapshot.data == null) {
-          return Center(
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadiusGeometry.circular(100),
-                child: Icon(Icons.person, color: Colors.red),
-              ),
-            ),
           );
         }
         final data = snapshot.data;
@@ -563,8 +579,8 @@ class _PostWidgetState extends State<PostWidget> {
                           Text(
                             data?['name'] ?? "Can't fetch User",
                             style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           Text(

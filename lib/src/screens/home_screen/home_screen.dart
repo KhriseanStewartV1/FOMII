@@ -1,17 +1,20 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/router.dart';
+import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/provider/post_provider.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/screens/notifications/notification_screen.dart';
-import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/post_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:upgrader/upgrader.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +27,11 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<List<PostModal>>? _postSubscription;
   int selectedTab = 0;
   String uid = FirebaseAuth.instance.currentUser!.uid;
+  final List<PostModal> allPosts = []; // Combined list of posts
+  bool isLoadingMore = false; // to prevent multiple fetches
+  DocumentSnapshot? lastDocument; // last doc for pagination
+  final ScrollController _scrollController = ScrollController();
+  TextEditingController searchController = TextEditingController();
 
   Future<void> refresh() async {
     final postProvider = Provider.of<PostProvider>(context, listen: false);
@@ -39,11 +47,25 @@ class _HomeScreenState extends State<HomeScreen> {
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
+  void _getDeviceToken() async {
+    NotificationService().pushToken(uid);
+    bool status = await NotificationService().requestNotificationPermission();
+    print(status);
+  }
+
   @override
   void initState() {
     super.initState();
+    _getDeviceToken();
     final postProvider = Provider.of<PostProvider>(context, listen: false);
     postProvider.listenToPostUpdates(); // start listening for real-time updates
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !isLoadingMore) {
+        PostServices().fetchMorePosts(lastDocument!);
+      }
+    });
   }
 
   // ignore: unused_element
@@ -65,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _postSubscription?.cancel(); // ✅ cancel stream to avoid unmounted errors
     super.dispose();
   }
@@ -100,39 +123,89 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        triggerMode: RefreshIndicatorTriggerMode.anywhere,
-        onRefresh: refresh,
-        child: Consumer<PostProvider>(
-          builder: (context, postProvider, _) {
-            final posts = postProvider.posts.values.toList();
-            if (posts.isEmpty) {
-              return Expanded(child: Center(child: Text("No posts")));
-            }
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: Stack(
-                children: [
-                  if (selectedTab == 0) _buildStreamPosts(posts),
-                  if (selectedTab == 1)
-                    StreamBuilder(
-                      stream: PostServices().getFollowingPosts(uid),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: LoadingScreen());
-                        }
-                        if (!snapshot.hasData || snapshot.data == null) {
-                          return Center(child: Text("Not following anyone"));
-                        }
-                        final data = snapshot.data;
-                        return _buildStreamPosts(data!);
-                      },
+      body: UpgradeAlert(
+        barrierDismissible: false,
+        showLater: false,
+        showIgnore: false,
+        dialogStyle: Platform.isIOS
+            ? UpgradeDialogStyle.cupertino
+            : UpgradeDialogStyle.material,
+        upgrader: Upgrader(
+          durationUntilAlertAgain: const Duration(hours: 1),
+          debugLogging: kDebugMode,
+        ),
+        child: RefreshIndicator(
+          triggerMode: RefreshIndicatorTriggerMode.anywhere,
+          onRefresh: refresh,
+          child: Consumer<PostProvider>(
+            builder: (context, postProvider, _) {
+              final posts = postProvider.posts.values.toList();
+              if (posts.isEmpty) {
+                return Center(child: Text("No posts"));
+              }
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Stack(
+                  children: [
+                    if (selectedTab == 0) Column(
+                      children: [
+                                TextFormField(
+                                  controller: searchController,
+                            onChanged: (query) {
+                              final postProvider = Provider.of<PostProvider>(
+                                context,
+                                listen: false,
+                              );
+                              final filtered = postProvider.posts.values
+                                  .where(
+                                    (p) => p.postText.toLowerCase().contains(
+                                      query.toLowerCase(),
+                                    ),
+                                  )
+                                  .toList();
+                              setState(() {
+                                // Show filtered list
+                              });
+                            },
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 0,
+                                horizontal: 10,
+                              ),
+                              hint: Text(
+                                "Search...",
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        Expanded(child: _buildStreamPosts(posts)),
+                      ],
                     ),
-                ],
-              ),
-            );
-          },
+                    if (selectedTab == 1)
+                      StreamBuilder(
+                        stream: PostServices().getFollowingPosts(uid),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData || snapshot.data == null) {
+                            return Center(child: Text("Not following anyone"));
+                          }
+                          final data = snapshot.data;
+                          if (data!.isEmpty) {
+                            return Center(child: Text("Not Followers Post"));
+                          }
+                          return _buildStreamPosts(data);
+                        },
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -146,42 +219,72 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Function to load older posts
+  Future<void> loadMorePosts() async {
+    if (lastDocument == null && allPosts.isNotEmpty) {
+      // No more posts to load
+      return;
+    }
+    setState(() {
+      isLoadingMore = true;
+    });
+
+    final morePosts = await PostServices().fetchMorePosts(lastDocument!);
+    if (morePosts.isNotEmpty) {
+      setState(() {
+        allPosts.addAll(morePosts);
+        lastDocument;
+      });
+    }
+    setState(() {
+      isLoadingMore = false;
+    });
+  }
+
+  // Fetch initial posts (latest 10)
+  Widget buildStreamBuilder() {
+    return StreamBuilder<List<PostModal>>(
+      stream: PostServices().readLatestPosts(), // your stream for newest posts
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        // Replace existing posts with latest
+        final latestPosts = snapshot.data!;
+        allPosts.clear();
+        allPosts.addAll(latestPosts);
+
+        return ListView.builder(
+          controller: _scrollController,
+          itemCount: allPosts.length,
+          itemBuilder: (context, index) {
+            final post = allPosts[index];
+            return ListTile(
+              title: Text(post.postText), // assuming PostModal has title
+              // your post widget here
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildStreamPosts(List<PostModal> data) {
-    return Column(
-      children: [
-        SizedBox(height: 10),
-        TextField(
-          decoration: InputDecoration(
-            hint: Text(
-              "Search...",
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w400,
-                fontSize: 14,
-              ),
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 1.0,
-              horizontal: 6.0,
-            ),
-          ),
-        ),
-        SizedBox(height: 8),
-        Expanded(
-          child: ListView.separated(
-            separatorBuilder: (context, index) => Divider(),
-            itemCount: data.length,
-            padding: const EdgeInsets.only(top: 10),
-            itemBuilder: (context, index) {
-              final PostModal post = data[index];
-              return AnimatedSwitcher(
-                duration: Duration(milliseconds: 1),
-                child: PostWidget(post: post),
-              );
-            },
-          ),
-        ),
-      ],
+    return ListView.separated(
+      separatorBuilder: (context, index) => Divider(),
+      itemCount: data.length,
+      padding: const EdgeInsets.only(top: 10),
+      itemBuilder: (context, index) {
+        final PostModal post = data[index];
+        return AnimatedSwitcher(
+          duration: Duration(milliseconds: 1),
+          child: PostWidget(post: post),
+        );
+      },
     );
   }
 

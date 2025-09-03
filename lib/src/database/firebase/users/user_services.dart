@@ -3,9 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fomo_connect/src/modal/user_modal.dart';
 
 final _instance = FirebaseFirestore.instance;
+  final uid = FirebaseAuth.instance.currentUser!.uid;
 
 class UserServices {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
   final _db = _instance.collection("users");
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getUIdSearch(String uIdSearch) {

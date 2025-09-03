@@ -6,10 +6,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/database/provider/post_provider.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
+import 'package:fomo_connect/src/widgets/constants.dart';
+import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/widgets/mention_text_field.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -52,6 +56,32 @@ Future<DocumentSnapshot?> _getProfile(String userId) async {
 class _PostWidgetProfileState extends State<PostWidgetProfile> {
   String uid = FirebaseAuth.instance.currentUser!.uid;
   bool isFollowing = false;
+  final TextEditingController _commentController = TextEditingController();
+
+  void userComment() async {
+    final commentText = _commentController.text.trim();
+    if (commentText.isEmpty) return;
+    final userData = await UserServices().readUser(uid);
+    if (userData == null) return; // handle error if needed
+
+    await PostServices().addComment(
+      commentText,
+      uid,
+      userData['profilePic'],
+      DateTime.now(),
+      userData['name'],
+      widget.post.uuid,
+    );
+    await NotificationService.sendPushNotificationv2(
+      deviceToken: userData['token'],
+      title: "${userData['name']} left a comment",
+      body: commentText,
+    );
+
+    _commentController.clear(); // Clear input after sending
+    setState(() {}); // Optional, refresh UI if needed
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -158,7 +188,7 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
           ),
           TextButton(
             onPressed: () {
-              displayRoundedSnackBar(context, "Coming soon");
+              showCommentModal();
             },
             child: _buildBottomPostOptions(
               "Comment",
@@ -349,6 +379,146 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
             ),
             // SizedBox(height: 5),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _defaultPicCard(BuildContext context) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(shape: BoxShape.circle),
+      child: Center(child: Icon(Icons.person, size: 30, color: Colors.white)),
+    );
+  }
+
+  Widget _buildCommentStream() {
+    return StreamBuilder(
+      stream: PostServices().readComments(widget.post.uuid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: LoadingScreen());
+        }
+        if (!snapshot.hasData || snapshot.data == null) {
+          return Center(child: Text("No Comments"));
+        }
+        final data = snapshot.data;
+        if (data is List && data!.isEmpty) {
+          return Center(child: Text("No Comments"));
+        }
+        return ListView.separated(
+          separatorBuilder: (context, index) => SizedBox(height: 10),
+          itemCount: data!.length, // Use actual data length
+          itemBuilder: (context, index) {
+            final commentData = data[index];
+            final comment = commentData['comment'];
+            final profilePic = commentData['profilePic'];
+            final name = commentData['name'];
+            final timestamp = commentData['timestamp'];
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ClipOval(
+                      child: profilePic == null || profilePic.isEmpty
+                          ? _defaultPicCard(context)
+                          : CachedNetworkImage(
+                              imageUrl: profilePic,
+                              fit: BoxFit.cover,
+                              width: 50,
+                              height: 50,
+                              progressIndicatorBuilder:
+                                  (context, child, progress) {
+                                    return Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  },
+                              errorWidget: (context, error, object) {
+                                return _defaultPicCard(context);
+                              },
+                            ),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      name,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Text(
+                  comment, // Replace with actual message
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(getFormattedDate(timestamp)),
+                  ], // Replace as needed
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  showCommentModal() {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Important to allow resize
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 8.0,
+              right: 8.0,
+              top: 15.0,
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Comments", style: Theme.of(context).textTheme.titleLarge),
+                Divider(),
+                SizedBox(height: 6),
+                SizedBox(
+                  height: SizeConfig.heightPercentage(40),
+                  child: _buildCommentStream(),
+                ),
+                // Input area
+                Row(
+                  children: [
+                    Expanded(
+                      child: MentionTextField(
+                        controller: _commentController,
+                        text: "Add a comment...",
+                        onMentionSelected: (String mention) {
+                          print("Mention selected: $mention");
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        userComment();
+                      },
+                      icon: Icon(Icons.send),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         );
       },
     );

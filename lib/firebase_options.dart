@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCU8jpM_NI4I2F1h1zEqXZzOro8bSfefHA',
-    appId: '1:625047258752:android:f8894fe16faebd00904865',
+    appId: '1:625047258752:android:c1d06f5a4239ee9c904865',
     messagingSenderId: '625047258752',
     projectId: 'fomo-connect',
     storageBucket: 'fomo-connect.firebasestorage.app',
@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '625047258752',
     projectId: 'fomo-connect',
     storageBucket: 'fomo-connect.firebasestorage.app',
-    androidClientId: '625047258752-t47cs5qn2tq9qolri45d351723oo6mgc.apps.googleusercontent.com',
+    androidClientId: '625047258752-hk1nqdrtvmq0v2l60qrdnip66m4t3s13.apps.googleusercontent.com',
     iosClientId: '625047258752-6mjod1ecqibk1m2oll4lec57a5vot7td.apps.googleusercontent.com',
     iosBundleId: 'com.example.fomoConnect',
   );
@@ -75,7 +75,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '625047258752',
     projectId: 'fomo-connect',
     storageBucket: 'fomo-connect.firebasestorage.app',
-    androidClientId: '625047258752-t47cs5qn2tq9qolri45d351723oo6mgc.apps.googleusercontent.com',
+    androidClientId: '625047258752-hk1nqdrtvmq0v2l60qrdnip66m4t3s13.apps.googleusercontent.com',
     iosClientId: '625047258752-6mjod1ecqibk1m2oll4lec57a5vot7td.apps.googleusercontent.com',
     iosBundleId: 'com.example.fomoConnect',
   );

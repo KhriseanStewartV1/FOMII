@@ -1,4 +1,4 @@
-package com.example.fomo_connect
+package com.terobytez.fomii_connect
 
 import io.flutter.embedding.android.FlutterActivity
 

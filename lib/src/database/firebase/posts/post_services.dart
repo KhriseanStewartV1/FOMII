@@ -26,13 +26,39 @@ class PostServices {
     });
   }
 
+  Stream<List<PostModal>> readLatestPosts() {
+    return _db.orderBy('timestamp', descending: true).limit(1).snapshots().map((
+      snapshot,
+    ) {
+      final posts = snapshot.docs
+          .map((doc) => PostModal.fromMap(doc.data()))
+          .toList();
+      return posts;
+    });
+  }
+
+  // Function to load more posts (older than current last)
+  Future<List<PostModal>> fetchMorePosts(DocumentSnapshot lastDocument) async {
+    final query = _db
+        .orderBy('timestamp', descending: true)
+        .startAfterDocument(lastDocument)
+        .limit(10);
+
+    final snapshot = await query.get();
+
+    if (snapshot.docs.isNotEmpty) {
+      lastDocument = snapshot.docs.last;
+    }
+    return snapshot.docs.map((doc) => PostModal.fromMap(doc.data())).toList();
+  }
+
   Future<void> addComment(
     String comment,
     String uid,
     String profilePic,
     DateTime timestamp,
     String name,
-    String postId
+    String postId,
   ) async {
     try {
       await _db.doc(postId).collection("comments").add({
@@ -40,16 +66,16 @@ class PostServices {
         'uid': uid,
         'profilePic': profilePic,
         'timestamp': timestamp,
-        'name' : name,
-
+        'name': name,
       });
     } catch (e) {
       print(e);
     }
   }
 
-Stream<List<Map<String, dynamic>>> readComments(String postId) {
-    return _db.doc(postId)
+  Stream<List<Map<String, dynamic>>> readComments(String postId) {
+    return _db
+        .doc(postId)
         .collection('comments')
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());

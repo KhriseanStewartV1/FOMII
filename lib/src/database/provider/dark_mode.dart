@@ -4,7 +4,7 @@ import 'package:fomo_connect/theme.dart';
 //requires provider
 
 class ThemeProvider with ChangeNotifier {
-  ThemeData _themeData = darkMode;
+  ThemeData _themeData = lightMode;
   bool _isDarkMode = false;
 
   ThemeData get themeData => _themeData;

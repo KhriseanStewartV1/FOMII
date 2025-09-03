@@ -1,13 +1,17 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/database/others/image.dart';
 import 'package:fomo_connect/src/database/storage/image.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/widgets/mention_text_field.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -31,6 +35,8 @@ class _AddPostState extends State<AddPost> {
   XFile? file;
   File? postFile;
   bool _isLoading = false;
+
+  List<String> mentionedUsers = [];
 
   void pickImage() async {
     final dir = await Directory.systemTemp.createTemp();
@@ -96,6 +102,32 @@ class _AddPostState extends State<AddPost> {
     }
   }
 
+  checkUser() async {
+    for (var mentionedUniqueId in mentionedUsers) {
+      // Query the 'users' collection to get the real uid
+      final querySnap = await FirebaseFirestore.instance
+          .collection('users')
+          .where('uniqueId', isEqualTo: mentionedUniqueId)
+          .limit(1)
+          .get();
+
+      if (querySnap.docs.isEmpty) {
+        print("No user found for $mentionedUniqueId");
+        continue; // skip if user doesn't exist
+      }
+
+      final userDoc = querySnap.docs.first;
+      final receiverUid = userDoc.id; // Firestore document ID
+      final deviceToken = userDoc['token'] as String?;
+      await NotificationService.sendPushNotificationv2(
+        deviceToken: deviceToken!,
+        title: "$userName messaged you!",
+        body: postController.text,
+      );
+      print("Notification sent to $mentionedUniqueId -> $receiverUid");
+    }
+  }
+
   void handleSubmit() async {
     setState(() {
       _isLoading = true;
@@ -136,6 +168,8 @@ class _AddPostState extends State<AddPost> {
           uuid,
         );
       }
+      HapticFeedback.lightImpact();
+      await checkUser(); // Check and send notifications to mentioned users
       displayRoundedSnackBar(context, "Posted");
       Navigator.pop(context); // Close after posting
     } catch (e) {
@@ -153,7 +187,7 @@ class _AddPostState extends State<AddPost> {
       appBar: AppBar(
         title: Text(
           'Create Post',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14),
         ),
         actions: [
           MaterialButton(
@@ -178,77 +212,19 @@ class _AddPostState extends State<AddPost> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // User info row
-              Row(
-                children: [
-                  FutureBuilder(
-                    future: UserServices().readUser(user!.uid),
-                    builder: (context, s) {
-                      if (s.connectionState == ConnectionState.waiting) {
-                        return Center(child: LoadingScreen());
-                      }
-                      if (!s.hasData || s.data == null) {
-                        return CircleAvatar(
-                          radius: 25,
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.person,
-                            color: Colors.black,
-                            size: 27,
-                          ),
-                        );
-                      }
-                      final data = s.data;
-                      return ClipRRect(
-                        borderRadius: BorderRadiusGeometry.circular(25),
-                        child: CachedNetworkImage(
-                          imageUrl: data?['profilePic'],
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          progressIndicatorBuilder: (context, url, progress) {
-                            return CircleAvatar(
-                              radius: 25,
-                              backgroundColor: Colors.white,
-                              backgroundImage: NetworkImage(
-                                data?['profilePic'],
-                              ), // Placeholder
-                            );
-                          },
-                          errorWidget: (context, url, error) {
-                            return CircleAvatar(
-                              radius: 25,
-                              backgroundColor: Colors.white,
-                              child: Icon(
-                                Icons.person,
-                                color: Colors.black,
-                                size: 27,
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  SizedBox(width: 10),
-                  Text(
-                    userName ?? "Anonymous",
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
+              _buildProfile(),
               SizedBox(height: 10),
               // Post input
               Expanded(
-                child: TextField(
+                child: MentionTextField(
                   controller: postController,
-                  maxLines: null,
-                  decoration: InputDecoration(
-                    hintText: "What's on your mind?",
-                    border: InputBorder.none,
-                  ),
+                  onMentionSelected: (mentionId) {
+                    // Here mentionId is the actual user uid
+                    if (!mentionedUsers.contains(mentionId)) {
+                      mentionedUsers.add(mentionId);
+                    }
+                    print('Mentioned Users IDs: $mentionedUsers');
+                  },
                 ),
               ),
               SizedBox(height: 4),
@@ -328,6 +304,59 @@ class _AddPostState extends State<AddPost> {
           ),
         ),
       ),
+    );
+  }
+
+  Row _buildProfile() {
+    return Row(
+      children: [
+        FutureBuilder(
+          future: UserServices().readUser(user!.uid),
+          builder: (context, s) {
+            if (s.connectionState == ConnectionState.waiting) {
+              return Center(child: LoadingScreen());
+            }
+            if (!s.hasData || s.data == null) {
+              return CircleAvatar(
+                radius: 25,
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Colors.black, size: 27),
+              );
+            }
+            final data = s.data;
+            return ClipRRect(
+              borderRadius: BorderRadiusGeometry.circular(25),
+              child: CachedNetworkImage(
+                imageUrl: data?['profilePic'],
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                progressIndicatorBuilder: (context, url, progress) {
+                  return CircleAvatar(
+                    radius: 25,
+                    backgroundColor: Colors.white,
+                    backgroundImage: NetworkImage(
+                      data?['profilePic'],
+                    ), // Placeholder
+                  );
+                },
+                errorWidget: (context, url, error) {
+                  return CircleAvatar(
+                    radius: 25,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, color: Colors.black, size: 27),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+        SizedBox(width: 10),
+        Text(
+          userName ?? "Anonymous",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+      ],
     );
   }
 }

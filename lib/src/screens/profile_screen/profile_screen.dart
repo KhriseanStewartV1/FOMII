@@ -43,30 +43,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void loadUniqueId() async {
-    final userData = await UserServices().readUser(uid);
-    if (userData != null && userData['uniqueId'] != null) {
-      setState(() {
-        uniqueId = userData['uniqueId'];
-      });
-    } else {
-      setState(() {});
+    try {
+      final userData = await UserServices().readUser(uid);
+      if (userData != null && userData['uniqueId'] != null) {
+        setState(() {
+          uniqueId = userData['uniqueId'];
+        });
+      } else {
+        setState(() {});
+      }
+    } catch (e) {
+      print("Error getting uniqueId: $e");
     }
   }
 
-  void checkStatus() async {
-    final userData = await UserServices().readUser(uid);
-    try {
-      if (userData!['status'] != null) {
-        setState(() {
-          status = true;
-        });
-      } else {
-        status = false;
-      }
-    } catch (e) {
-      print(e);
-    }
-  }
+  // void checkStatus() async {
+  //   final userData = await UserServices().readUser(uid);
+  //   try {
+  //     if (userData!['status'] != null) {
+  //       setState(() {
+  //         status = true;
+  //       });
+  //     } else {
+  //       status = false;
+  //     }
+  //   } catch (e) {
+  //     print(e);
+  //   }
+  // }
 
   void getCount() async {
     final followerCount = await UserServices().getCount(uid, "followers");
@@ -111,7 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void loadUser() async {
     loadUniqueId();
     getCount();
-    checkStatus();
+    // checkStatus();
   }
 
   Future<void> pickImage() async {
@@ -203,7 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         automaticallyImplyLeading: false,
         title: Text(
           'Profile',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 22),
         ),
         actions: [
           IconButton(
@@ -229,9 +233,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       TextButton(
                         onPressed: pickImage,
-                        child: Text("Upload Profile Picture"),
+                        child: Text(
+                          "Upload Profile Picture",
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ),
-
                       if (uniqueId == 'Tap to Generate')
                         TextButton(onPressed: generateId, child: Text(uniqueId))
                       else
@@ -247,6 +253,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                           child: Text(
                             "@$uniqueId",
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.w400,
                               fontSize: 14,
@@ -258,13 +266,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildCount(),
                 ],
               ),
-              const Divider(),
+              const Divider(thickness: 1, height: 30),
               const SizedBox(height: 10),
               Text(
                 "Posts",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: 14,
                 ),
               ),
               const SizedBox(height: 10),
@@ -280,64 +288,122 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return showModalBottomSheet(
       isScrollControlled: true,
       context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
-              right: 30,
-              left: 30,
-              top: 40,
+              right: 20,
+              left: 20,
+              top: 20,
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  "Update Profile",
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
+                Center(
+                  child: Text(
+                    "Update Profile",
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
+                SizedBox(height: 4),
+                Divider(),
                 SizedBox(height: 10),
+
+                /// Username
+                Text(
+                  "Name",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 TextField(
                   controller: _userNameController,
                   decoration: InputDecoration(
-                    hint: Text(
-                      data['name'],
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18,
-                      ),
+                    hintText: data['name'] ?? 'Enter your name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
                     ),
                   ),
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 16),
+
+                /// Bio
+                Text(
+                  "Bio",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 TextField(
                   controller: _bioController,
+                  maxLines: 3,
                   decoration: InputDecoration(
-                    hint: Text(
-                      data['bio'] ?? 'Enter Bio',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 18,
-                      ),
+                    hintText: data['bio'] == ''
+                        ? 'Tell us about yourself...'
+                        : data['bio'],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
                     ),
                   ),
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 10),
+
+                /// Unique ID
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Custom ID",
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Tooltip(
+                      message:
+                          "This ID will be used for Mentions, profile URL and Messaging",
+                      child: Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
                 TextField(
                   controller: _uniqueIdController,
                   decoration: InputDecoration(
-                    hint: Text(
-                      data['uniqueId'] ?? 'Custom ID',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 18,
-                      ),
+                    hintText: data['uniqueId'] ?? 'Enter your custom ID',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 24),
+
+                /// Submit Button
                 SizedBox(
                   height: 50,
                   width: double.infinity,
@@ -345,7 +411,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.lightBlueAccent,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                     onPressed: isLoading ? null : updateUser,
@@ -355,12 +421,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             "Update",
                             style: GoogleFonts.poppins(
                               color: Colors.white,
-                              fontSize: 20,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                   ),
                 ),
+                SizedBox(height: 10),
               ],
             ),
           ),
@@ -382,7 +449,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 "Upload Profile Picture",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
-                  fontSize: 24,
+                  fontSize: 14,
                 ),
               ),
               SizedBox(height: 4),
@@ -392,7 +459,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 leading: Icon(Icons.photo),
                 title: Text('Picture'),
                 onTap: () {
-                  statusImg();
+                  pickImage();
+                  Navigator.pop(context);
                 },
               ),
             ],
@@ -414,15 +482,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(
                 "Followers",
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: 14,
+                  color: Colors.grey[700],
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
                 followers,
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -437,15 +506,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(
                 "Following",
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: 14,
+                  color: Colors.grey[700],
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
                 following,
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -467,7 +537,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
         final doc = snap.data!;
-        final createdAt = formatDateString(doc['createdAt']);
+        String createdAt = 'Loading Creation Date';
+        try {
+          String creationDate = formatDateString(doc['createdAt']);
+          setState(() {
+            createdAt = creationDate;
+          });
+        } catch (e) {
+          print("Error getting creation date: $e");
+        }
         final bio = doc.get('bio') ?? 'No Bio';
 
         return Row(
@@ -497,20 +575,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
-                            fontSize: 22,
+                            fontSize: 18,
                           ),
                         ),
                       ),
                     ],
                   ),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Flexible(
                         child: Text(
                           createdAt,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(fontSize: 14),
+                          style: GoogleFonts.poppins(fontSize: 12),
+                        ),
+                      ),
+                      Tooltip(
+                        message:
+                            "Account creation date cannot be changed or edited",
+                        child: Icon(
+                          Icons.question_mark,
+                          size: 16,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -532,6 +620,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: TextFormField(
         controller: controller,
         maxLines: null,
+        readOnly: true,
         decoration: InputDecoration(
           hintText: 'Add your bio...',
           contentPadding: const EdgeInsets.symmetric(
@@ -554,8 +643,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
-            width: 120,
-            height: 120,
+            width: 100,
+            height: 100,
             decoration: BoxDecoration(
               color: Colors.grey.shade300,
               shape: BoxShape.circle,
@@ -642,7 +731,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: Colors.grey.shade500,
         shape: BoxShape.circle,
       ),
-      child: Center(child: Icon(Icons.person, size: 90, color: Colors.white)),
+      child: Center(child: Icon(Icons.person, size: 80, color: Colors.white)),
     );
   }
 

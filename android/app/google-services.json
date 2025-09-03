@@ -7,18 +7,18 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:625047258752:android:f8894fe16faebd00904865",
+        "mobilesdk_app_id": "1:625047258752:android:c1d06f5a4239ee9c904865",
         "android_client_info": {
-          "package_name": "com.example.fomo_connect"
+          "package_name": "com.terobytez.fomii_connect"
         }
       },
       "oauth_client": [
         {
-          "client_id": "625047258752-hk1nqdrtvmq0v2l60qrdnip66m4t3s13.apps.googleusercontent.com",
+          "client_id": "625047258752-75fu0urptmse48hkaebcjca93ijhhojr.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.fomo_connect",
-            "certificate_hash": "a27769d953e47234c3325f5af285f356d57294dd"
+            "package_name": "com.terobytez.fomii_connect",
+            "certificate_hash": "827dbe394c0451cd79b2e3b4c7ad06edbd52f18c"
           }
         },
         {

@@ -65,13 +65,13 @@ class NotificationService {
   }
 
   void pushToken(String uid) async {
+
+    try {
     String? token = await fcm.getToken();
     if (token == null) {
       print("FCM token is null");
       return;
     }
-
-    try {
       final doc = await db.collection('users').doc(uid).get();
       final savedToken = doc.data()?['token'] as String?;
 

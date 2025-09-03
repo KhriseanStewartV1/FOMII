@@ -90,14 +90,14 @@ class AuthService {
     await _instance.signOut();
   }
 
-  Future<bool> signInWithGoogle(BuildContext context) async {
+  Future<UserCredential?> signInWithGoogle(BuildContext context) async {
     try {
       // Start the sign-in process
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
       if (googleUser == null) {
         // The user canceled the sign-in
-        return false;
+        return null;
       }
 
       // Obtain the auth details
@@ -113,15 +113,16 @@ class AuthService {
       // Sign in to Firebase
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithCredential(credential);
+          
 
       displayRoundedSnackBar(
         context,
         "Signed in: ${userCredential.user?.displayName}",
       );
-      return true;
+      return userCredential;
     } catch (e) {
-      print("Error signing in with Google: $e");
-      return false;
+      displayRoundedSnackBar(context, "Error Signing in With Google: $e");
+      return null;
     }
   }
 

@@ -8,6 +8,7 @@ class PostModal {
   final String uuid;
   List<dynamic> likes; // list of user IDs
   List<dynamic> reposts; // list of user IDs
+  List<dynamic> mentions; // list of comment IDs
 
   PostModal({
     required this.userId,
@@ -19,8 +20,9 @@ class PostModal {
     this.imageUrl,
     List<dynamic>? likes,
     List<dynamic>? reposts,
+    List<dynamic>? mentions,
   }) : likes = likes ?? [],
-       reposts = reposts ?? [];
+       reposts = reposts ?? [], mentions = mentions ?? [];
 
   // Convert to Map for Firebase storage
   Map<String, dynamic> toMap() {

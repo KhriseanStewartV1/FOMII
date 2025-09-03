@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/chat/chat_service.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
@@ -44,7 +45,6 @@ class _UserChatState extends State<UserChat> {
     if (doc == null) {
       return null;
     } else {
-      print(doc['token']);
       return doc['token'];
     }
   }
@@ -54,7 +54,6 @@ class _UserChatState extends State<UserChat> {
     if (doc == null) {
       return null;
     } else {
-      print(doc['name']);
       return doc['name'];
     }
   }
@@ -182,6 +181,7 @@ class _UserChatState extends State<UserChat> {
                           deviceToken: token!,
                           title: username ?? 'Unknown',
                         );
+                        HapticFeedback.lightImpact();
                         setState(() => isSendingMessage = false);
                       }
                     },
