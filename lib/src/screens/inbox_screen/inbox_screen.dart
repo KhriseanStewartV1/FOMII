@@ -7,8 +7,8 @@ import 'package:fomo_connect/src/database/firebase/chat/chat_service.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/modal/indox_modal.dart';
 import 'package:fomo_connect/src/screens/inbox_screen/chat_screen.dart';
+import 'package:fomo_connect/src/widgets/bottom_sheet.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
-import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -44,8 +44,7 @@ class _InboxScreenState extends State<InboxScreen> {
   }
 
   String uid = FirebaseAuth.instance.currentUser!.uid;
-  final _uIdSearchController = TextEditingController();
-  String uIdSearch = '';
+  int selectedTab = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -145,149 +144,8 @@ class _InboxScreenState extends State<InboxScreen> {
     return showModalBottomSheet(
       context: context,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 20.0),
-          child: Column(
-            children: [
-              Text(
-                "Mutual Followers",
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              SizedBox(height: 20),
-              TextFormField(
-                controller: _uIdSearchController,
-                keyboardType: TextInputType.text,
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 0,
-                    horizontal: 10,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  hintText: 'Search User ID',
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    uIdSearch = _uIdSearchController.text;
-                  });
-                },
-              ),
-              SizedBox(height: 10),
-              if (uIdSearch == '')
-                _buildListofMutualFollowers()
-              else
-                Expanded(
-                  child: StreamBuilder(
-                    stream: UserServices().getUIdSearch(uIdSearch),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: LoadingScreen());
-                      }
-                      if (!snapshot.hasData || snapshot.data == null) {
-                        return Center(child: Text("No User by that ID"));
-                      }
-                      final user = snapshot.data!.docs;
-                      return ListView(
-                        children: user.map((follower) {
-                          final followerData = follower.data();
-                          final followerId = follower.id;
-                          final name = followerData['name'] ?? "Unknown";
-
-                          return GestureDetector(
-                            onTap: () {
-                              if (followerId != null) {
-                                print(follower.id);
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => UserChat(
-                                      userId: uid,
-                                      chatId: "${followerId}_$uid",
-                                      recieverId: followerId,
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                displayFloatingSnackBar(
-                                  context,
-                                  "Unable to open chat, Data Missing",
-                                );
-                              }
-                            },
-                            child: _buildMessageCard(
-                              name: name,
-                              lastMessage: '',
-                              otherUid: followerId,
-                              time: '',
-                            ),
-                          );
-                        }).toList(),
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
-        );
+        return BottomSheetScreen();
       },
-    );
-  }
-
-  Widget _buildListofMutualFollowers() {
-    return Expanded(
-      child: StreamBuilder(
-        stream: ChatService().listMutualFollowers(uid),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: LoadingScreen());
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No Mutual Followers"));
-          }
-
-          final mutualFollowers = snapshot.data!;
-
-          return ListView(
-            children: mutualFollowers.map((follower) {
-              final followerData = follower.data();
-              final followerId = follower.id;
-              final name = followerData['name'] ?? "Unknown";
-
-              return GestureDetector(
-                onTap: () {
-                  if (followerId != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UserChat(
-                          userId: uid,
-                          chatId: "${followerId}_$uid",
-                          recieverId: followerId,
-                        ),
-                      ),
-                    );
-                  } else {
-                    displayFloatingSnackBar(
-                      context,
-                      "Unable to open chat, Data Missing",
-                    );
-                  }
-                },
-                child: _buildMessageCard(
-                  name: name,
-                  lastMessage: '',
-                  otherUid: followerId,
-                  time: '',
-                ),
-              );
-            }).toList(),
-          );
-        },
-      ),
     );
   }
 

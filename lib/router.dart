@@ -6,6 +6,7 @@ import 'package:fomo_connect/src/screens/auth/confirm_email/confirm_email_screen
 import 'package:fomo_connect/src/screens/auth/forgot_password/forgot_password.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
 import 'package:fomo_connect/src/screens/auth/sign_up_screen/sign_up_screen.dart';
+import 'package:fomo_connect/src/screens/auth/telephone_screen/telephone_screen.dart';
 import 'package:fomo_connect/src/screens/notifications/notification_screen.dart';
 import 'package:fomo_connect/src/screens/settings_screen/setting_screen.dart';
 import 'package:fomo_connect/src/widgets/splash_screen.dart';
@@ -18,6 +19,8 @@ class AppRouter {
   static const String confirmEmail = "/confirmEmail";
   static const String forgotPassword = "/forgotPassword";
 
+  static const String telephoneScreen = "/telephoneScreen";
+
   static const String authWrapper = "/authWrapper";
 
   static const String mainLayout = "/mainLayout";
@@ -26,14 +29,20 @@ class AppRouter {
   static const String notifications = "/notifications";
   static const String addPost = "/addPost";
 
+
+
   static Map<String, WidgetBuilder> get routes {
     return {
       splash: (context) => const SplashScreen(),
 
       login: (context) => const LogInScreen(),
       signup: (context) => const SignUpScreen(),
+
+
       confirmEmail: (context) => const ConfirmEmailScreen(),
       forgotPassword: (context) => const ForgotPasswordScreen(),
+
+      telephoneScreen: (context) => const TelephoneScreen(),
 
       authWrapper: (context) => const AuthWrapper(),
 

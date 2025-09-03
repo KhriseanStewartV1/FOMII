@@ -2,6 +2,7 @@ import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
+import 'package:fomo_connect/src/screens/camera_screen/camera_screen.dart';
 import 'package:fomo_connect/src/screens/home_screen/home_screen.dart';
 import 'package:fomo_connect/src/screens/inbox_screen/inbox_screen.dart';
 import 'package:fomo_connect/src/screens/profile_screen/profile_screen.dart';
@@ -16,10 +17,10 @@ class MainLayout extends StatefulWidget {
   State<MainLayout> createState() => _MainLayoutState();
 }
 
-List<Widget> _screens = [HomeScreen(), InboxScreen(), ProfileScreen()];
+List<Widget> _screens = [CameraScreen(), HomeScreen(), InboxScreen(), ProfileScreen()];
 
 class _MainLayoutState extends State<MainLayout> {
-  int currentIndex = 0;
+  int currentIndex = 1;
   ontap(int index) {
     setState(() {
       currentIndex = index;
@@ -57,6 +58,7 @@ class _MainLayoutState extends State<MainLayout> {
             currentIndex: currentIndex,
             onTap: ontap,
             items: [
+              BottomBarItem(icon: Icon(FeatherIcons.camera), title: Text("Camera")),
               BottomBarItem(icon: Icon(FeatherIcons.home), title: Text("Home")),
               BottomBarItem(
                 icon: Icon(FeatherIcons.inbox),

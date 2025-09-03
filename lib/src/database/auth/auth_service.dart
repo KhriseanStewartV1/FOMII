@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
+import 'package:fomo_connect/src/screens/auth/telephone_screen/verify_otp_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -71,6 +73,55 @@ class AuthService {
       return user.emailVerified;
     }
     return false;
+  }
+
+  Future<void> sendCode(String phoneNumber, BuildContext context) async {
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        // Auto-retrieval (sometimes works on Android)
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        displayRoundedSnackBar(context, "Verification failed: ${e.message}");
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VerifyOtpScreen(
+              verificationId: verificationId,
+              telephone: phoneNumber,
+            ),
+          ),
+        );
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {},
+    );
+  }
+
+
+  Future<PhoneAuthCredential?> verifyTelephone(
+    BuildContext context,
+    String verificationId,
+    String smsCode,
+    String telephone,
+  ) async {
+    try {
+      final cred = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+
+      await _instance.currentUser!.linkWithCredential(cred);
+
+      await UserServices().updateUser({"telephone": telephone});
+
+      return cred;
+    } catch (e) {
+      displayRoundedSnackBar(context, "Incorrect code or number");
+      return null;
+    }
   }
 
   Future<bool> resetPassword(String email) async {
