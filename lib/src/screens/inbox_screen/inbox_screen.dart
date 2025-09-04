@@ -3,6 +3,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/chat/chat_service.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/modal/indox_modal.dart';
@@ -45,6 +46,7 @@ class _InboxScreenState extends State<InboxScreen> {
 
   String uid = FirebaseAuth.instance.currentUser!.uid;
   int selectedTab = 1;
+  bool isAnonymous = AuthService().user!.isAnonymous;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +66,7 @@ class _InboxScreenState extends State<InboxScreen> {
                     "Inbox",
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
-                      fontSize: 22,
+                      fontSize: 18,
                     ),
                   ),
                   IconButton(
@@ -76,6 +78,14 @@ class _InboxScreenState extends State<InboxScreen> {
               const SizedBox(height: 20),
 
               /// Inbox List
+              isAnonymous == true ? 
+              SafeArea( 
+                child: Center(
+                  child: Text("Messages Disabled in Anonymous Mode",
+                    style: GoogleFonts.poppins(fontSize: 18),
+                  ),
+                ),
+              ) :
               Expanded(
                 child: StreamBuilder<List<InboxItem>>(
                   stream: ChatService().listInboxV2(),
@@ -131,7 +141,7 @@ class _InboxScreenState extends State<InboxScreen> {
                     );
                   },
                 ),
-              ),
+              )
             ],
           ),
         ),

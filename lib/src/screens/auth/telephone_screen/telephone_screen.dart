@@ -49,7 +49,7 @@ await AuthService()
               const Text(
                 "Enter your phone number",
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),

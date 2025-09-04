@@ -36,6 +36,16 @@ class AuthService {
     }
   }
 
+  Future<UserCredential?> signInAnonymous(BuildContext context) async {
+    try{
+      final cred = await _instance.signInAnonymously();
+      return cred;
+    }catch(e){
+      displayRoundedSnackBar(context, "Error Occurred");
+      return null;
+    }
+  }
+
   Future<UserCredential?> readUser(
     BuildContext context,
     String email,
@@ -99,7 +109,6 @@ class AuthService {
       codeAutoRetrievalTimeout: (String verificationId) {},
     );
   }
-
 
   Future<PhoneAuthCredential?> verifyTelephone(
     BuildContext context,

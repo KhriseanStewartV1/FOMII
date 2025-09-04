@@ -51,9 +51,8 @@ class _LogInScreenState extends State<LogInScreen> {
     });
     if (_formKey.currentState?.validate() != false) {
       try {
-        final check = AuthService().readUser(context, email, password);
-
-        if (check == true) {
+        final check = await AuthService().readUser(context, email, password);
+        if (check != null) {
           if (_rememberMe) {
             await prefs.setBool('remember_me', true);
             await prefs.setString('email', _email.text);
@@ -61,16 +60,17 @@ class _LogInScreenState extends State<LogInScreen> {
             await prefs.remove('remember_me');
             await prefs.remove('email');
           }
-          Navigator.pushReplacementNamed(context, AppRouter.mainLayout);
+            print("Hey");
+            Navigator.pushReplacementNamed(context, AppRouter.authWrapper);
         }
       } catch (e) {
         displaySnackBar(context, "Error: $e");
         setState(() {
-          _loading = true;
+          _loading = false;
         });
       } finally {
         setState(() {
-          _loading = true;
+          _loading = false;
         });
       }
     }

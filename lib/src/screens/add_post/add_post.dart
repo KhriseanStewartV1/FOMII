@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
@@ -35,6 +36,8 @@ class _AddPostState extends State<AddPost> {
   XFile? file;
   File? postFile;
   bool _isLoading = false;
+
+  bool anonymous = AuthService().user!.isAnonymous;
 
   List<String> mentionedUsers = [];
 
@@ -316,10 +319,9 @@ class _AddPostState extends State<AddPost> {
             if (s.connectionState == ConnectionState.waiting) {
               return Center(child: LoadingScreen());
             }
-            if (!s.hasData || s.data == null) {
+            if (!s.hasData || s.data == null || anonymous) {
               return CircleAvatar(
                 radius: 25,
-                backgroundColor: Colors.white,
                 child: Icon(Icons.person, color: Colors.black, size: 27),
               );
             }

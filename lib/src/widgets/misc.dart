@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void displaySnackBar(
@@ -20,7 +21,7 @@ void displaySnackBar(
   );
 }
 
-void displayRoundedSnackBar(
+void safeScaffoldMessager(
   BuildContext context,
   String message, {
   Color backgroundColor = Colors.lightBlueAccent,
@@ -79,6 +80,12 @@ void displayFloatingSnackBar(
   );
 
   ScaffoldMessenger.of(context).showSnackBar(snackBar);
+}
+
+void displayRoundedSnackBar(BuildContext context, String message) {
+  SchedulerBinding.instance.addPostFrameCallback((_) {
+    safeScaffoldMessager(context, message);
+  });
 }
 
 Color hexToColor(String hexCode) {

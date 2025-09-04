@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:deepar_flutter_plus/deepar_flutter_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/src/screens/camera_screen/filter_data.dart';
+import 'package:fomo_connect/src/widgets/loading_screen.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -17,6 +18,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
 
 final _controllerPlus = DeepArControllerPlus();
+
 Future<void> init () async {
   final result = await _controllerPlus.initialize(androidLicenseKey: "9306a430517468330a3aad09e93d57be8cc9d4bc7ad8b1ad4831160314df89ca69de2e7825b6d9ff", iosLicenseKey: "2b150a2226b8db4a863493fb21e05c5f10526dc91d1cbd15f60e625456d3945d75a605c5ff562519");
   if(result.success){
@@ -42,31 +44,45 @@ Future<void> init () async {
   print("Initialization failed: ${result.message}");
 }
 }
+
+
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _controllerPlus.destroy();
+  }
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: init(),
-      builder: (context, snapshot) {
-        if(snapshot.connectionState == ConnectionState.done){
-          return Stack(
-            children: [
-              buildCameraPrev(),
-                Positioned(
-                  bottom: 80,
-                  left: 0,
-                  right: 0,
-                  child: buildFilters(),
-                ),
-                Positioned(
-                  bottom: 30,
-                  left: 20,
-                  right: 20,
-                  child: buildButtons(),
-                ),
-            ],
-          );
-        } else {return Center(child: Text("Loading Preview"),);}
-      }
+    return Scaffold(
+      body: SafeArea(
+        child: FutureBuilder(
+          future: init(),
+          builder: (context, snapshot) {
+            if(snapshot.connectionState == ConnectionState.done){
+              return Stack(
+                children: [
+                  buildCameraPrev(),
+                  Positioned(child: IconButton(style: IconButton.styleFrom(backgroundColor: Colors.grey, foregroundColor: Colors.white), onPressed: () {Navigator.pop(context);}, icon: Icon(Icons.arrow_back))),
+                    Positioned(
+                      bottom: 80,
+                      left: 0,
+                      right: 0,
+                      child: buildFilters(),
+                    ),
+                    Positioned(
+                      bottom: 30,
+                      left: 20,
+                      right: 20,
+                      child: buildButtons(),
+                    ),
+                ],
+              );
+            } else {return Center(child: LoadingScreen(),);}
+          }
+        ),
+      ),
     );
   }
 
@@ -93,10 +109,10 @@ Future<void> init () async {
         itemCount: filters.length,
         itemBuilder: (context, index) {
         final filter = filters[index];
-        final effectFile = File("${filter.imagePath}${filter.filterPath}").path;
-        print(filter.imagePath);
+        final effectFile = "${filter.imagePath}${filter.filterPath}";
+        print(effectFile);
         return InkWell(
-          onTap: () => _controllerPlus.switchEffect("assets/filters/Devil_Neon_Horns/Neon_Devil_Horns.deepar"),
+          onTap: () => _controllerPlus.switchEffect(effectFile),
           child: Padding(padding: const EdgeInsets.all(8.0),
           child: Container(width: 40, decoration: BoxDecoration(shape: BoxShape.circle, image: DecorationImage(
     image: AssetImage("${filter.imagePath}${filter.imageName}"),

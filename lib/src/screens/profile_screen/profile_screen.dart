@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fomo_connect/router.dart';
+import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/database/others/image.dart';
@@ -11,7 +12,7 @@ import 'package:fomo_connect/src/database/storage/image.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
-import 'package:fomo_connect/src/widgets/post_widget_profile.dart';
+import 'package:fomo_connect/src/widgets/posts/post_widget_profile.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -34,6 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _userNameController = TextEditingController();
   final _bioController = TextEditingController();
   final _uniqueIdController = TextEditingController();
+  final anonymous = AuthService().user!.isAnonymous;
 
   @override
   void initState() {
@@ -207,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         automaticallyImplyLeading: false,
         title: Text(
           'Profile',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 22),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           IconButton(
@@ -252,7 +254,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             );
                           },
                           child: Text(
-                            "@$uniqueId",
+                            anonymous ?
+                            'Anonymous' :
+                            "@$uniqueId" ,
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                             style: GoogleFonts.poppins(
@@ -546,7 +550,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         } catch (e) {
           print("Error getting creation date: $e");
         }
-        final bio = doc.get('bio') ?? 'No Bio';
+        String bio = 'Anonymous';
+        try{
+          setState(() {
+            
+         bio = doc.get('bio') ?? 'No Bio';
+          });
+
+        }catch(e){
+          displayRoundedSnackBar(context, "No bio");
+        }
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,6 +599,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Flexible(
                         child: Text(
+                          anonymous ? 'Anonymous' :
                           createdAt,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -653,16 +667,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         }
 
-        if (!snapshot.hasData || !snapshot.data!.exists) {
+        if (!snapshot.hasData || !snapshot.data!.exists || AuthService().user!.isAnonymous) {
           return _defaultPicCard(context); // fallback
         }
 
         final data = snapshot.data!;
         String? profilePic = data['profilePic'];
 
-        // Determine if user is online/active (status)
         bool isActive =
-            status; // assuming 'status' is a boolean variable in scope
+            status;
 
         return Stack(
           children: [
@@ -671,7 +684,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                // Add gradient if active, else default border
                 gradient: isActive
                     ? LinearGradient(
                         colors: [Colors.red, Colors.orange, Colors.yellow],

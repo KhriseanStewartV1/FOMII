@@ -101,24 +101,23 @@ flutter:
     - assets/
     - assets/lottie/
     - assets/filters/
-    - assets/filters/Burning Effect/
+    - assets/filters/Burning_Effect/
     - assets/filters/Devil_Neon_Horns/
-    - assets/filters/Elephant Trunk/
-    - assets/filters/Emotion Meter/
-    - assets/filters/Emotions Exaggerator/
-    - assets/filters/Fire Effect/
-    - assets/filters/Flower Face/
-    - assets/filters/Galaxy Background/
+    - assets/filters/Elephant_Trunk/
+    - assets/filters/Emotion_Meter/
+    - assets/filters/Emotions_Exaggerator/
+    - assets/filters/Fire_Effect/
+    - assets/filters/Flower_Face/
     - assets/filters/Hope/
     - assets/filters/Humanoid/
-    - assets/filters/Makeup Look Simple/
-    - assets/filters/Makeup Look w_ Slipt Screen Effect/
-    - assets/filters/Ping Pong Minigame/
-    - assets/filters/Pixel Heart Particles/
+    - assets/filters/Makeup_Look_Simple/
+    - assets/filters/Makeup_Look_w_Slipt_Screen_Effect/
+    - assets/filters/Ping_Pong_Minigame/
+    - assets/filters/Pixel_Heart_Particles/
     - assets/filters/Snail/
     - assets/filters/Stallone/
-    - assets/filters/Vendetta Mask/
-    - assets/filters/Viking Helmet PBR/
+    - assets/filters/Vendetta_Mask/
+    - assets/filters/Viking_Helmet_PBR/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

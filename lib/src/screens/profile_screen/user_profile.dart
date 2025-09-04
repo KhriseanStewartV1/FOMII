@@ -9,7 +9,7 @@ import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
-import 'package:fomo_connect/src/widgets/post_widget_profile.dart';
+import 'package:fomo_connect/src/widgets/posts/post_widget_profile.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -134,7 +134,7 @@ class _UserProfileState extends State<UserProfile>
       appBar: AppBar(
         title: Text(
           'Profile',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 22),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           MaterialButton(
@@ -273,7 +273,7 @@ class _UserProfileState extends State<UserProfile>
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
-                            fontSize: 22,
+                            fontSize: 18,
                           ),
                         ),
                       ),

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,10 +10,9 @@ import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/provider/post_provider.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/screens/notifications/notification_screen.dart';
-import 'package:fomo_connect/src/widgets/post_widget.dart';
+import 'package:fomo_connect/src/widgets/posts/post_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:upgrader/upgrader.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   DocumentSnapshot? lastDocument; // last doc for pagination
   final ScrollController _scrollController = ScrollController();
   TextEditingController searchController = TextEditingController();
+  List<PostModal> filteredPost = [];
 
   Future<void> refresh() async {
     final postProvider = Provider.of<PostProvider>(context, listen: false);
@@ -123,89 +122,86 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: UpgradeAlert(
-        barrierDismissible: false,
-        showLater: false,
-        showIgnore: false,
-        dialogStyle: Platform.isIOS
-            ? UpgradeDialogStyle.cupertino
-            : UpgradeDialogStyle.material,
-        upgrader: Upgrader(
-          durationUntilAlertAgain: const Duration(hours: 1),
-          debugLogging: kDebugMode,
-        ),
-        child: RefreshIndicator(
-          triggerMode: RefreshIndicatorTriggerMode.anywhere,
-          onRefresh: refresh,
-          child: Consumer<PostProvider>(
-            builder: (context, postProvider, _) {
-              final posts = postProvider.posts.values.toList();
-              if (posts.isEmpty) {
-                return Center(child: Text("No posts"));
-              }
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: Stack(
-                  children: [
-                    if (selectedTab == 0) Column(
-                      children: [
-                                TextFormField(
-                                  controller: searchController,
-                            onChanged: (query) {
-                              final postProvider = Provider.of<PostProvider>(
-                                context,
-                                listen: false,
-                              );
-                              final filtered = postProvider.posts.values
-                                  .where(
-                                    (p) => p.postText.toLowerCase().contains(
-                                      query.toLowerCase(),
-                                    ),
-                                  )
-                                  .toList();
-                              setState(() {
-                                // Show filtered list
-                              });
-                            },
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 0,
-                                horizontal: 10,
-                              ),
-                              hint: Text(
-                                "Search...",
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
+      body: RefreshIndicator(
+        triggerMode: RefreshIndicatorTriggerMode.anywhere,
+        onRefresh: refresh,
+        child: Consumer<PostProvider>(
+          builder: (context, postProvider, _) {
+            final posts = postProvider.posts.values.toList();
+            if (posts.isEmpty) {
+              return Center(child: Text("No posts"));
+            }
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: Stack(
+                children: [
+                  if (selectedTab == 0) Column(
+                    children: [
+                              TextFormField(
+                                controller: searchController,
+                          onChanged: (query) {
+                            final postProvider = Provider.of<PostProvider>(
+                              context,
+                              listen: false,
+                            );
+                            final allPosts = postProvider.posts.values.toList();
+      
+                            setState(() {
+                              if (query.isEmpty) {
+                                filteredPost = allPosts; // reset to all
+                              } else {
+                                final lowerQuery = query.toLowerCase();
+      
+                                filteredPost = allPosts.where((p) {
+                                  final matchesText = p.postText.toLowerCase().contains(lowerQuery);
+                                  final matchesUser = p.userName.toLowerCase().contains(lowerQuery);
+                                  final matchesHashtag = p.tags.any(
+                                    (tag) => tag.toLowerCase().contains(lowerQuery),
+                                  );
+      
+                                  return matchesText || matchesUser || matchesHashtag;
+                                }).toList();
+                              }
+                            });
+                          },
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 0,
+                              horizontal: 10,
+                            ),
+                            hint: Text(
+                              "Search...",
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w400,
+                                fontSize: 14,
                               ),
                             ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                        Expanded(child: _buildStreamPosts(posts)),
-                      ],
+                        ),
+                      Expanded(child: searchController.text.isNotEmpty ? _buildStreamPosts(filteredPost) : _buildStreamPosts(posts)),
+                    ],
+                  ),
+                  if (selectedTab == 1)
+                    StreamBuilder(
+                      stream: PostServices().getFollowingPosts(uid),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData || snapshot.data == null) {
+                          return Center(child: Text("Not following anyone"));
+                        }
+                        final data = snapshot.data;
+                        if (data!.isEmpty) {
+                          return Center(child: Text("Not Followers Post"));
+                        }
+                        return _buildStreamPosts(data);
+                      },
                     ),
-                    if (selectedTab == 1)
-                      StreamBuilder(
-                        stream: PostServices().getFollowingPosts(uid),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData || snapshot.data == null) {
-                            return Center(child: Text("Not following anyone"));
-                          }
-                          final data = snapshot.data;
-                          if (data!.isEmpty) {
-                            return Center(child: Text("Not Followers Post"));
-                          }
-                          return _buildStreamPosts(data);
-                        },
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
+                ],
+              ),
+            );
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton(

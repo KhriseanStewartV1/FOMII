@@ -10,16 +10,17 @@ import 'package:flutter/services.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
-import 'package:fomo_connect/src/database/provider/post_provider.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/screens/profile_screen/user_profile.dart';
 import 'package:fomo_connect/src/widgets/constants.dart';
+import 'package:fomo_connect/src/widgets/default_card.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/mention_text_field.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
+import 'package:fomo_connect/src/widgets/posts/post_bottom_button_mq.dart';
+import 'package:fomo_connect/src/widgets/posts/post_bottom_buttons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 // ignore: must_be_immutable
@@ -103,9 +104,9 @@ class _PostWidgetState extends State<PostWidget> {
             style: GoogleFonts.poppins(fontSize: 13),
           ),
           if (size.width < 361)
-            _buildSmallerBottomPostBar(widget.post)
+            PostBottomButtons(post: widget.post)
           else
-            _buildBottomPostBar(widget.post),
+            PostBottomButtonMq(post: widget.post),
         ],
       ),
     );
@@ -172,158 +173,6 @@ class _PostWidgetState extends State<PostWidget> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildBottomPostBar(PostModal post) {
-    final posts = Provider.of<PostProvider>(context).posts[post.uuid]!;
-    final isLiked = posts.likes.contains(uid);
-    final isReposted = posts.reposts.contains(uid);
-    final likesCount = posts.likes.length;
-    final repostsCount = posts.reposts.length;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              backgroundColor: isLiked
-                  ? hexToColor("#FF5252")
-                  : Colors.transparent,
-            ),
-            onPressed: () {
-              Provider.of<PostProvider>(
-                context,
-                listen: false,
-              ).toggleLike(post.uuid, uid, context);
-              HapticFeedback.lightImpact();
-            },
-            child: _buildBottomPostOptions(
-              "${likesCount == 0 ? 'Like' : likesCount}",
-              Icon(
-                size: 24,
-                FeatherIcons.thumbsUp,
-                color: isLiked
-                    ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              showCommentModal();
-            },
-            child: _buildBottomPostOptions(
-              "Comment",
-              Icon(FeatherIcons.messageSquare, size: 24),
-            ),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              backgroundColor: isReposted
-                  ? Colors.lightBlueAccent.shade200
-                  : Colors.transparent,
-            ),
-            onPressed: () {
-              Provider.of<PostProvider>(
-                context,
-                listen: false,
-              ).toggleRepost(post.uuid, uid, context);
-              HapticFeedback.lightImpact();
-            },
-            child: _buildBottomPostOptions(
-              "${repostsCount == 0 ? 'Repost' : repostsCount}",
-              Icon(
-                FeatherIcons.repeat,
-                size: 24,
-                color: isReposted
-                    ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSmallerBottomPostBar(PostModal post) {
-    final posts = Provider.of<PostProvider>(context).posts[post.uuid]!;
-    final isLiked = posts.likes.contains(uid);
-    final isReposted = posts.reposts.contains(uid);
-    final likesCount = posts.likes.length;
-    final repostsCount = posts.reposts.length;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              backgroundColor: isLiked
-                  ? hexToColor("#FF5252")
-                  : Colors.transparent,
-            ),
-            onPressed: () {
-              Provider.of<PostProvider>(
-                context,
-                listen: false,
-              ).toggleLike(post.uuid, uid, context);
-            },
-            child: _buildBottomPostOptions(
-              "${likesCount == 0 ? '' : likesCount}",
-              Icon(
-                size: 24,
-                FeatherIcons.thumbsUp,
-                color: isLiked
-                    ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              showCommentModal();
-            },
-            child: _buildBottomPostOptions(
-              "",
-              Icon(FeatherIcons.messageSquare, size: 24),
-            ),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              backgroundColor: isReposted
-                  ? Colors.lightBlueAccent.shade200
-                  : Colors.transparent,
-            ),
-            onPressed: () {
-              Provider.of<PostProvider>(
-                context,
-                listen: false,
-              ).toggleRepost(post.uuid, uid, context);
-            },
-            child: _buildBottomPostOptions(
-              "${repostsCount == 0 ? '' : repostsCount}",
-              Icon(
-                FeatherIcons.repeat,
-                size: 24,
-                color: isReposted
-                    ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -409,7 +258,7 @@ class _PostWidgetState extends State<PostWidget> {
                   children: [
                     ClipOval(
                       child: profilePic == null || profilePic.isEmpty
-                          ? _defaultPicCard(context)
+                          ? DefaultCard()
                           : CachedNetworkImage(
                               imageUrl: profilePic,
                               fit: BoxFit.cover,
@@ -422,7 +271,7 @@ class _PostWidgetState extends State<PostWidget> {
                                     );
                                   },
                               errorWidget: (context, error, object) {
-                                return _defaultPicCard(context);
+                                return DefaultCard();
                               },
                             ),
                     ),
@@ -456,15 +305,6 @@ class _PostWidgetState extends State<PostWidget> {
           },
         );
       },
-    );
-  }
-
-  Widget _defaultPicCard(BuildContext context) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(shape: BoxShape.circle),
-      child: Center(child: Icon(Icons.person, size: 30, color: Colors.white)),
     );
   }
 
@@ -632,25 +472,6 @@ class _PostWidgetState extends State<PostWidget> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildBottomPostOptions(String text, Icon icon) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      spacing: 4,
-      children: [
-        icon,
-        Text(
-          text,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-      ],
     );
   }
 
