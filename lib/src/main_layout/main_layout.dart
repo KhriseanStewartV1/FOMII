@@ -77,19 +77,36 @@ class _MainLayoutState extends State<MainLayout> {
               currentIndex: currentIndex,
               onTap: ontap,
               items: [
-                BottomBarItem(icon: Icon(FeatherIcons.camera), title: Text("Camera")),
-                BottomBarItem(icon: Icon(FeatherIcons.home), title: Text("Home")),
+                BottomBarItem(
+                icon: Icon(FeatherIcons.camera), 
+                title: Text("Camera"),
+                selectedIcon: Icon(Icons.camera_alt), 
+                selectedColor: Colors.lightBlue),
+                BottomBarItem(
+                  icon: Icon(FeatherIcons.home), 
+                  title: Text("Home"), 
+                  selectedIcon: Icon(Icons.home_filled), 
+                  selectedColor: Colors.lightBlue),
                 BottomBarItem(
                   icon: Icon(FeatherIcons.inbox),
                   title: Text("Inbox"),
+                  selectedIcon: Icon(Icons.inbox),
+                  selectedColor: Colors.lightBlue
                 ),
                 BottomBarItem(
                   icon: Icon(FeatherIcons.user),
                   title: Text("Profile"),
+                  selectedIcon: Icon(Icons.person),
+                  selectedColor: Colors.lightBlue
                 ),
-                BottomBarItem(icon: Icon(Icons.group_outlined), title: Text("Forum")),
+                BottomBarItem(
+                  icon: Icon(Icons.group_outlined),
+                  title: Text("Forum"),
+                  selectedIcon: Icon(Icons.group), 
+                  selectedColor: Colors.lightBlue
+                ),
               ],
-              option: DotBarOptions(dotStyle: DotStyle.tile),
+              option: BubbleBarOptions(),
             ),
           ),
         );
