@@ -12,7 +12,7 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <application
-        android:label="FOMII - The Offbeat Social"
+        android:label="FOMII - The Blog"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

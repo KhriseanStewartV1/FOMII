@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/router.dart';
 import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
+import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/database/provider/dark_mode.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
@@ -82,10 +84,7 @@ class _SettingScreenState extends State<SettingScreen> {
                     leading: Icon(Icons.check_outlined),
                     title: Text("Goals"),
                     onTap: () {
-                      displayRoundedSnackBar(
-                        context,
-                        "Coming soon.\nKeep Posting and get Prepared",
-                      );
+                      showGoals();
                     },
                   ),
                   ListTile(
@@ -151,7 +150,7 @@ class _SettingScreenState extends State<SettingScreen> {
                     final data = async.data;
                     return ListTile(leading: CircleAvatar(backgroundImage: NetworkImage(data!['profilePic'])), title: Text("${data['name']}"), trailing: IconButton(onPressed: () {
                       showAccountManager();
-                    }, icon: Icon(Icons.arrow_drop_down_circle_outlined)),);
+                    }, icon: Icon(Icons.arrow_drop_up_outlined, size: 30,)),);
                   }
                 ),
               )
@@ -161,9 +160,73 @@ class _SettingScreenState extends State<SettingScreen> {
       ),
     );
   }
+  showGoals(){
+    return showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        checkPosts() async {
+          if (user == null || isAnonymous) {
+            displayRoundedSnackBar(context, "Sign in to track your goals");
+            return;
+          }
+
+          final postStream = PostServices().readYourPosts(uid);
+          final posts = await postStream.first; // get first snapshot from stream
+
+          // if posts are PostModal objects
+          final userPosts = posts.where((post) => post.userId == user!.uid).toList();
+
+          print("User has ${userPosts.length} posts");
+
+          if(userPosts.length >= 10){
+            displayRoundedSnackBar(context, "Congratulations! You've reached 10 posts!");
+            UserServices().updateUser({'badges': FieldValue.arrayUnion(['10_posts'])});
+          }
+          if(userPosts.length >= 50){
+            displayRoundedSnackBar(context, "Amazing! You've reached 100 posts!");
+            UserServices().updateUser({'badges': FieldValue.arrayUnion(['100_posts'])});
+          }
+          if(userPosts.length >= 100){
+            displayRoundedSnackBar(context, "Incredible! You've reached 100 followers!");
+            UserServices().updateUser({'badges': FieldValue.arrayUnion(['100_followers'])});
+          }
+          UserServices().updateUser({'badges': FieldValue.arrayUnion(['tester'])});
+        }
+        checkPosts();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.check_outlined),
+                title: Text("Goals"),
+              ),
+              const Divider(),
+              ListTile(
+                leading: Icon(Icons.star_border),
+                title: Text("Reach 10 posts"),
+                subtitle: Text("Keep posting and engaging with the community to reach this goal."),
+                onTap: checkPosts,
+              ),
+              ListTile(
+                leading: Icon(Icons.star_half),
+                title: Text("Reach 100 posts"),
+                subtitle: Text("Stay active and contribute to the community to achieve this milestone."),
+              ),
+              ListTile(
+                leading: Icon(Icons.follow_the_signs),
+                title: Text("Reach 100 Followers"),
+                subtitle: Text("Become a top contributor by consistently sharing valuable content."),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   showAccountManager() {
-
-
   return showModalBottomSheet(
     context: context,
     builder: (context) {

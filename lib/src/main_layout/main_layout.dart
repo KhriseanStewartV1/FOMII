@@ -2,10 +2,9 @@ import 'dart:io';
 
 import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
-import 'package:fomo_connect/src/screens/camera_screen/camera_screen.dart';
+import 'package:fomo_connect/src/screens/forum/forum_screen.dart';
 import 'package:fomo_connect/src/screens/home_screen/home_screen.dart';
 import 'package:fomo_connect/src/screens/inbox_screen/inbox_screen.dart';
 import 'package:fomo_connect/src/screens/profile_screen/profile_screen.dart';
@@ -21,18 +20,31 @@ class MainLayout extends StatefulWidget {
   State<MainLayout> createState() => _MainLayoutState();
 }
 
-List<Widget> _screens = [CameraScreen(), HomeScreen(), InboxScreen(), ProfileScreen()];
+List<Widget> _screens = [
+  // CameraScreen(),
+  HomeScreen(), 
+  InboxScreen(), 
+  ProfileScreen(),
+  ForumScreen()
+];
 
 class _MainLayoutState extends State<MainLayout> {
-  int currentIndex = 1;
+  int currentIndex = 0;
+
+  // ontap(int index) {
+  //   if(index == 0){
+  //     Navigator.push(context, MaterialPageRoute(builder: (context) => CameraScreen(),));
+  //   }else {
+  //   setState(() {
+  //     currentIndex = index;
+  //   });
+  //   }
+  // }
+
   ontap(int index) {
-    if(index == 0){
-      Navigator.push(context, MaterialPageRoute(builder: (context) => CameraScreen(),));
-    }else {
     setState(() {
       currentIndex = index;
     });
-    }
   }
 
   @override
@@ -60,14 +72,14 @@ class _MainLayoutState extends State<MainLayout> {
         }
         return UpgradeAlert(
         barrierDismissible: false,
-        showLater: false,
+        showLater: true,
         showIgnore: false,
         dialogStyle: Platform.isIOS
             ? UpgradeDialogStyle.cupertino
             : UpgradeDialogStyle.material,
         upgrader: Upgrader(
           durationUntilAlertAgain: const Duration(hours: 1),
-          debugLogging: kDebugMode,
+          minAppVersion: "2.0.0",
         ),
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -77,11 +89,6 @@ class _MainLayoutState extends State<MainLayout> {
               currentIndex: currentIndex,
               onTap: ontap,
               items: [
-                BottomBarItem(
-                icon: Icon(FeatherIcons.camera), 
-                title: Text("Camera"),
-                selectedIcon: Icon(Icons.camera_alt), 
-                selectedColor: Colors.lightBlue),
                 BottomBarItem(
                   icon: Icon(FeatherIcons.home), 
                   title: Text("Home"), 
@@ -97,12 +104,6 @@ class _MainLayoutState extends State<MainLayout> {
                   icon: Icon(FeatherIcons.user),
                   title: Text("Profile"),
                   selectedIcon: Icon(Icons.person),
-                  selectedColor: Colors.lightBlue
-                ),
-                BottomBarItem(
-                  icon: Icon(Icons.group_outlined),
-                  title: Text("Forum"),
-                  selectedIcon: Icon(Icons.group), 
                   selectedColor: Colors.lightBlue
                 ),
               ],

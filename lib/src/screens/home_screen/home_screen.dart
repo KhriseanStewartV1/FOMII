@@ -95,7 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        surfaceTintColor: Theme.of(context).colorScheme.onSurface,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
         leading: Center(
           child: Text(
             "FOMII",
@@ -137,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   if (selectedTab == 0) Column(
                     children: [
-                              TextFormField(
+                        TextFormField(
                                 controller: searchController,
                           onChanged: (query) {
                             final postProvider = Provider.of<PostProvider>(
@@ -153,7 +154,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 final lowerQuery = query.toLowerCase();
       
                                 filteredPost = allPosts.where((p) {
-                                  final matchesText = p.postText.toLowerCase().contains(lowerQuery);
+                                  final matchesText = p.richText.where( (element) {
+                                    if (element.containsKey('insert')) {
+                                      final insert = element['insert'];
+                                      if (insert is String) {
+                                        return insert.toLowerCase().contains(lowerQuery);
+                                      }
+                                    }
+                                    return false;
+                                  }).isNotEmpty;
                                   final matchesUser = p.userName.toLowerCase().contains(lowerQuery);
                                   final matchesHashtag = p.tags.any(
                                     (tag) => tag.toLowerCase().contains(lowerQuery),
@@ -260,7 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
           itemBuilder: (context, index) {
             final post = allPosts[index];
             return ListTile(
-              title: Text(post.postText), // assuming PostModal has title
+              title: Text(post.userName), // assuming PostModal has title
               // your post widget here
             );
           },

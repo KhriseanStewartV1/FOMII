@@ -6,18 +6,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
-import 'package:fomo_connect/src/database/provider/post_provider.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/widgets/constants.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/mention_text_field.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
+import 'package:fomo_connect/src/widgets/posts/post_bottom_button_mq.dart';
+import 'package:fomo_connect/src/widgets/posts/post_bottom_buttons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 // ignore: must_be_immutable
@@ -84,6 +85,14 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
 
   @override
   Widget build(BuildContext context) {
+    final document = (widget.post.richText.isNotEmpty)
+    ? quill.Document.fromJson(widget.post.richText)
+    : quill.Document();
+    final controller = quill.QuillController(
+      document: document,
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+    final size =  MediaQuery.of(context).size;
     return Container(
       margin: const EdgeInsets.only(bottom: 30),
       child: Column(
@@ -93,16 +102,20 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
           SizedBox(height: 8),
           if (widget.post.imageUrl != null) _buildImageRatio(widget.post),
           SizedBox(height: 8),
-          Text(
-            maxLines: 2,
-            textAlign: TextAlign.start,
-            overflow: TextOverflow.ellipsis,
-            widget.post.postText,
-            style: GoogleFonts.poppins(fontSize: 15),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: quill.QuillEditor(
+              controller: controller,
+              scrollController: ScrollController(),
+              focusNode: FocusNode(),
+            ),
           ),
           SizedBox(height: 4),
           Divider(),
-          _buildBottomPostBar(widget.post),
+          if (size.width < 361)
+            PostBottomButtons(post: widget.post)
+          else
+            PostBottomButtonMq(post: widget.post),
         ],
       ),
     );
@@ -146,81 +159,6 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildBottomPostBar(PostModal post) {
-    final posts = Provider.of<PostProvider>(context).posts[post.uuid]!;
-    final isLiked = posts.likes.contains(uid);
-    final isReposted = posts.reposts.contains(uid);
-    final likesCount = posts.likes.length;
-    final repostsCount = posts.reposts.length;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              backgroundColor: isLiked
-                  ? hexToColor("#FF5252")
-                  : Colors.transparent,
-            ),
-            onPressed: () {
-              Provider.of<PostProvider>(
-                context,
-                listen: false,
-              ).toggleLike(post.uuid, uid, context);
-            },
-            child: _buildBottomPostOptions(
-              "${likesCount == 0 ? 'Like' : likesCount}",
-              Icon(
-                size: 24,
-                FeatherIcons.thumbsUp,
-                color: isLiked
-                    ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              showCommentModal();
-            },
-            child: _buildBottomPostOptions(
-              "Comment",
-              Icon(FeatherIcons.messageSquare, size: 24),
-            ),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              backgroundColor: isReposted
-                  ? Colors.lightBlueAccent.shade200
-                  : Colors.transparent,
-            ),
-            onPressed: () {
-              Provider.of<PostProvider>(
-                context,
-                listen: false,
-              ).toggleRepost(post.uuid, uid, context);
-            },
-            child: _buildBottomPostOptions(
-              "${repostsCount == 0 ? 'Repost' : repostsCount}",
-              Icon(
-                FeatherIcons.repeat,
-                size: 24,
-                color: isReposted
-                    ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -490,7 +428,7 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text("Comments", style: Theme.of(context).textTheme.titleLarge),
-                Divider(),
+                // Divider(),
                 SizedBox(height: 6),
                 SizedBox(
                   height: SizeConfig.heightPercentage(40),
@@ -521,25 +459,6 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildBottomPostOptions(String text, Icon icon) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      spacing: 4,
-      children: [
-        icon,
-        Text(
-          text,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-      ],
     );
   }
 

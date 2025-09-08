@@ -72,6 +72,10 @@ class PostServices {
       print(e);
     }
   }
+  
+  Stream<QuerySnapshot<Map<String, dynamic>>> numberOfComments (String postId) {
+    return _db.doc(postId).collection("comments").snapshots();
+  }
 
   Stream<List<Map<String, dynamic>>> readComments(String postId) {
     return _db

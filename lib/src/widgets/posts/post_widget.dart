@@ -7,6 +7,8 @@ import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
@@ -32,9 +34,12 @@ class PostWidget extends StatefulWidget {
   State<PostWidget> createState() => _PostWidgetState();
 }
 
+
+
 String uid = FirebaseAuth.instance.currentUser!.uid;
 final _commentController = TextEditingController();
 final Map<String, DocumentSnapshot> _profileCache = {};
+
 
 Future<ui.Image> _getImageSize(String url) async {
   final completer = Completer<ui.Image>();
@@ -82,26 +87,37 @@ class _PostWidgetState extends State<PostWidget> {
     setState(() {}); // Optional, refresh UI if needed
   }
 
+  bool  isAnonymous = AuthService().user!.isAnonymous;
+  
+  
   @override
   Widget build(BuildContext context) {
+    final document = (widget.post.richText.isNotEmpty)
+    ? quill.Document.fromJson(widget.post.richText)
+    : quill.Document();
+    final controller = quill.QuillController(
+      document: document,
+      selection: const TextSelection.collapsed(offset: 0),
+    );
     SizeConfig.init(context);
     final size = MediaQuery.of(context).size;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          isAnonymous ? _buildAnonymousProfile(widget.post) :
           _buildPostProfileText(widget.post),
           SizedBox(height: 8),
           if (widget.post.imageUrl != null) _buildImageRatio(widget.post),
           SizedBox(height: 8),
-          Text(
-            maxLines: 2,
-            textAlign: TextAlign.start,
-            overflow: TextOverflow.ellipsis,
-            widget.post.postText,
-            style: GoogleFonts.poppins(fontSize: 13),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: quill.QuillEditor(
+              controller: controller,
+              scrollController: ScrollController(),
+              focusNode: FocusNode(),
+            ),
           ),
           if (size.width < 361)
             PostBottomButtons(post: widget.post)
@@ -318,6 +334,54 @@ class _PostWidgetState extends State<PostWidget> {
     return timeago.format(dateTime);
   }
 
+  Widget _buildAnonymousProfile(PostModal post) {
+    return Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                spacing: 20,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 48,
+                        width: 48,
+                        child: isAnonymous ? CircleAvatar(child: Icon(Icons.person),) : CircleAvatar(
+                          backgroundImage: NetworkImage(post.imageUrl!),
+                        )
+                      ),
+                      SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 4,
+                        children: [
+                          Text(
+                            post.userName,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            getRelativeTime(post.timestamp),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              // SizedBox(height: 5),
+            ],
+          );
+  }
+
   Widget _buildPostProfileText(PostModal post) {
     String followMessage = '';
     return FutureBuilder<DocumentSnapshot?>(
@@ -372,11 +436,59 @@ class _PostWidgetState extends State<PostWidget> {
           );
         }
         final data = snapshot.data;
+        if(!data!.exists){
+          return Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                spacing: 20,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 48,
+                        width: 48,
+                        child: ClipRRect(
+                          borderRadius: BorderRadiusGeometry.circular(100),
+                          child: Center(child: Icon(Icons.person)),
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 4,
+                        children: [
+                          Text(
+                            post.userName,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            getRelativeTime(post.timestamp),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              // SizedBox(height: 5),
+            ],
+          );
+        }
         return GestureDetector(
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => UserProfile(user: data!)),
+              MaterialPageRoute(builder: (context) => UserProfile(user: data)),
             );
           },
           child: Column(
@@ -395,7 +507,7 @@ class _PostWidgetState extends State<PostWidget> {
                         child: ClipRRect(
                           borderRadius: BorderRadiusGeometry.circular(100),
                           child: CachedNetworkImage(
-                            imageUrl: data?['profilePic'] ?? '',
+                            imageUrl: data['profilePic'] ?? '',
                             fit: BoxFit.cover,
                             progressIndicatorBuilder:
                                 (context, url, downloadProgress) => Center(
@@ -417,7 +529,7 @@ class _PostWidgetState extends State<PostWidget> {
                         spacing: 4,
                         children: [
                           Text(
-                            data?['name'] ?? "Can't fetch User",
+                            data['name'] ?? "Can't fetch User",
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -449,11 +561,14 @@ class _PostWidgetState extends State<PostWidget> {
                     onSelected: (value) async {
                       if (value == "follow") {
                         try {
-                          print(post.userId);
                           String message = await UserServices().followingSystem(
                             post.userId,
                             isFollowing,
                           );
+                          String? deviceToken = await NotificationService().getToken(post.userId);
+                          if(deviceToken != null && isFollowing){
+                            await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "New Follower", body: "${AuthService().user!.displayName} Followed you");
+                          }
                           setState(() {
                             followMessage = message;
                             isFollowing = !isFollowing;

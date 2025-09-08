@@ -10,6 +10,7 @@ import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/database/others/image.dart';
 import 'package:fomo_connect/src/database/storage/image.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
+import 'package:fomo_connect/src/widgets/beta_tester.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:fomo_connect/src/widgets/posts/post_widget_profile.dart';
@@ -27,6 +28,10 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool status = false;
   bool isLoading = false;
+  bool tester = false;
+  bool posts1 = false;
+  bool posts2 = false;
+  bool followers1 = false;
   XFile? file;
   String following = '0';
   String followers = '0';
@@ -42,7 +47,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // TODO: implement initState
     super.initState();
     loadUser();
+    loadUniqueBadge();
   }
+
+void loadUniqueBadge() async {
+  try {
+    final userData = await UserServices().readUser(uid);
+
+    if (userData != null && userData['badges'] != null) {
+      final badges = List<String>.from(userData['badges']); // cast to List<String>
+
+      for (final badge in badges) {
+        switch (badge) {
+          case "tester":
+            setState(() {
+              tester = true;
+            });
+            break;
+          case "10_posts":
+            setState(() {
+              posts1 = true;
+            });
+            break;
+          case "100_posts":
+            setState(() {
+              posts2 = true;
+            });
+            break;
+          case "100_followers":
+            setState(() {
+              followers1 = true;
+            });
+            break;
+          default:
+            setState(() { });
+            break;
+        }
+      }
+    }
+  } catch (e) {
+    print("Error getting uniqueId: $e");
+  }
+}
 
   void loadUniqueId() async {
     try {
@@ -206,6 +252,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
           'Profile',
@@ -553,12 +601,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         String bio = 'Anonymous';
         try{
           setState(() {
-            
-         bio = doc.get('bio') ?? 'No Bio';
+           bio = doc.get('bio') ?? 'No Bio';
           });
 
         }catch(e){
-          displayRoundedSnackBar(context, "No bio");
         }
 
         return Row(
@@ -592,6 +638,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       ),
+                      tester ? BetaTesterBadge() : SizedBox.shrink()
                     ],
                   ),
                   Row(

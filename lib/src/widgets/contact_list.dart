@@ -4,10 +4,12 @@ import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/chat/chat_service.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/database/telephone/telephone_service.dart';
+import 'package:fomo_connect/src/screens/auth/telephone_screen/telephone_screen.dart';
 import 'package:fomo_connect/src/screens/inbox_screen/chat_screen.dart';
 import 'package:fomo_connect/src/widgets/contact_photo.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ContactList extends StatefulWidget {
   const ContactList({super.key});
@@ -17,13 +19,56 @@ class ContactList extends StatefulWidget {
 }
 
 class _ContactListState extends State<ContactList> {
+  String uid = AuthService().user!.uid;
+  bool  contactReq = false;
+
+  @override
+  void initState() {
+    super.initState();
+    getPerms();
+  }
+   getPerms () async {
+    final perm = await Permission.contacts.request();
+    if(perm.isGranted){
+      setState(() {
+        contactReq = perm.isGranted;
+      });
+      return;
+    } else {
+      await Permission.contacts.request();
+    }
+  }
+
+  void numberCheck(BuildContext context) async {
+    print(contactReq);
+    if (contactReq == true) {
+      final userDoc = await UserServices().readUser(uid);
+
+      if (userDoc != null && userDoc.exists) {
+        try {
+          final data = userDoc.data() as Map<String, dynamic>?;
+
+          if (data == null || !data.containsKey('telephone') || (data['telephone'] as String).isEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TelephoneScreen()),
+            );
+          } else {
+            return;
+          }
+        } catch (e) {
+          print("Error checking telephone: $e");
+        }
+      }
+    }
+  }
+
   Future<List<Contact>> loadRegisteredContacts() async {
     if (await FlutterContacts.requestPermission()) {
       final contacts = await FlutterContacts.getContacts(
         withProperties: true,
         withPhoto: true,
       );
-
       return await getRegisteredContacts(contacts);
     }
     return [];
@@ -32,7 +77,7 @@ class _ContactListState extends State<ContactList> {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: FutureBuilder<List<Contact>>(
+      child: contactReq ? FutureBuilder<List<Contact>>(
         future: loadRegisteredContacts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -41,6 +86,7 @@ class _ContactListState extends State<ContactList> {
           if (snapshot.hasError) {
             return Center(child: Text("Error: ${snapshot.error}"));
           }
+          numberCheck(context);
           final contacts = snapshot.data ?? [];
           if (contacts.isEmpty) {
             return const Center(child: Text("No friends found in your contacts."));
@@ -82,7 +128,7 @@ class _ContactListState extends State<ContactList> {
             },
           );
         },
-      ),
+      ) : Center(child: Text("Contact Us Request Denied"),)
     );
   }
 }

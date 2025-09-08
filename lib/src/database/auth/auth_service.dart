@@ -94,6 +94,7 @@ class AuthService {
       },
       verificationFailed: (FirebaseAuthException e) {
         displayRoundedSnackBar(context, "Verification failed: ${e.message}");
+        print(e.message);
       },
       codeSent: (String verificationId, int? resendToken) {
         Navigator.push(
@@ -187,4 +188,5 @@ class AuthService {
   }
 
   User? user = _instance.currentUser;
+  // String? userName = _instance.currentUser!.displayName;
 }

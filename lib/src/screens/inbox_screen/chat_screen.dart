@@ -75,7 +75,9 @@ class _UserChatState extends State<UserChat> {
     final String chatId = widget.chatId;
 
     return Scaffold(
-      appBar: AppBar(title: Text(otherUserName ?? 'Loading...')),
+      appBar: AppBar(title: Text(otherUserName ?? 'Loading...'),         
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      elevation: 0,),
       body: SafeArea(
         child: Column(
           children: [

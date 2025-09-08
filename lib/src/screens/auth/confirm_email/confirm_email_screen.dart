@@ -69,7 +69,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
                 Text(
                   "We've sent a verification link to your email address. "
                   "Please check your inbox and follow the instructions "
-                  "to verify your account.",
+                  "to verify your account. CHECK YOUR SPAM!!",
                   style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -143,7 +143,7 @@ class _ConfirmEmailScreenState extends State<ConfirmEmailScreen> {
                 // Optional: Change Email TextButton
                 TextButton(
                   onPressed: () {
-                    // TODO: Implement change email action
+                    Navigator.pushReplacementNamed(context, AppRouter.login);
                   },
                   child: const Text(
                     'Change Email',

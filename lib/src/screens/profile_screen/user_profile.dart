@@ -7,6 +7,7 @@ import 'package:fomo_connect/src/database/firebase/notifications/notification_se
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
+import 'package:fomo_connect/src/widgets/beta_tester.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:fomo_connect/src/widgets/posts/post_widget_profile.dart';
@@ -25,6 +26,10 @@ class UserProfile extends StatefulWidget {
 class _UserProfileState extends State<UserProfile>
     with SingleTickerProviderStateMixin {
   String following = '0';
+  bool tester = false;
+  bool posts1 = false;
+  bool posts2 = false;
+  bool followers1 = false;
   String followers = '0';
   String uniqueId = 'Tap to Generate';
   bool isFollowing = false;
@@ -38,7 +43,48 @@ class _UserProfileState extends State<UserProfile>
     String uid = FirebaseAuth.instance.currentUser!.uid;
     getIsFollowing(uid);
     // checkStatus();
+    loadUniqueBadge();
   }
+
+  void loadUniqueBadge() async {
+  try {
+    final userData = await UserServices().readUser(uid);
+
+    if (userData != null && userData['badges'] != null) {
+      final badges = List<String>.from(userData['badges']); // cast to List<String>
+
+      for (final badge in badges) {
+        switch (badge) {
+          case "tester":
+            setState(() {
+              tester = true;
+            });
+            break;
+          case "10_posts":
+            setState(() {
+              posts1 = true;
+            });
+            break;
+          case "100_posts":
+            setState(() {
+              posts2 = true;
+            });
+            break;
+          case "100_followers":
+            setState(() {
+              followers1 = true;
+            });
+            break;
+          default:
+            setState(() { });
+            break;
+        }
+      }
+    }
+  } catch (e) {
+    print("Error getting uniqueId: $e");
+  }
+}
 
   void getIsFollowing(String uid) async {
     bool checkMessage = await UserServices().isFollowing(
@@ -132,6 +178,8 @@ class _UserProfileState extends State<UserProfile>
     final userName = widget.user['name'];
     return Scaffold(
       appBar: AppBar(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
         title: Text(
           'Profile',
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
@@ -277,6 +325,7 @@ class _UserProfileState extends State<UserProfile>
                           ),
                         ),
                       ),
+                      tester ? BetaTesterBadge() : SizedBox.shrink()
                     ],
                   ),
                   Row(

@@ -109,13 +109,13 @@ class _LogInScreenState extends State<LogInScreen> {
           if (createUser == true) {
             Navigator.pushReplacementNamed(context, AppRouter.authWrapper);
           } else {
-            displaySnackBar(context, "Failed to create user in Firestore");
+            displaySnackBar(context, "Failed to create user");
           }
         } else {
-          displaySnackBar(context, "Google sign-in failed");
+          Navigator.pushReplacementNamed(context, AppRouter.authWrapper);
         }
       } else {
-         Navigator.pushReplacementNamed(context, AppRouter.authWrapper);
+        displaySnackBar(context, "Google sign-in failed");
       }
     } catch (e) {
       print(e);

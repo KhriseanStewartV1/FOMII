@@ -37,11 +37,32 @@ class _BottomSheetScreenState extends State<BottomSheetScreen> {
                 ),
               ),
               SizedBox(height: 20),
-              _searchuId(),
+              TextFormField(
+                controller: _uIdSearchController,
+                keyboardType: TextInputType.text,
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 0,
+                    horizontal: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  hintText: 'Search User ID',
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    uIdSearch = _uIdSearchController.text;
+                  });
+                },
+              ),
               SizedBox(height: 10),
               _buildToggle(),
               if (selectedTab == 0)
+                if(_uIdSearchController.text.isEmpty)
                 _buildListofMutualFollowers()
+                else 
+                _buildSearchList()
               else
                 ContactList()
             ],
@@ -68,6 +89,7 @@ class _BottomSheetScreenState extends State<BottomSheetScreen> {
               final followerData = follower.data();
               final followerId = follower.id;
               final name = followerData['name'] ?? "Unknown";
+              print(name);
 
               return GestureDetector(
                 onTap: () {
@@ -210,29 +232,6 @@ class _BottomSheetScreenState extends State<BottomSheetScreen> {
     );
   }
 
-    TextFormField _searchuId() {
-    return TextFormField(
-              controller: _uIdSearchController,
-              keyboardType: TextInputType.text,
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 0,
-                  horizontal: 10,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                hintText: 'Search User ID',
-              ),
-              onChanged: (value) {
-                setState(() {
-                  uIdSearch = _uIdSearchController.text;
-                });
-              },
-            );
-  }
-
-  // ignore: unused_element
   Widget _buildSearchList() {
     return Expanded(
                 child: StreamBuilder(

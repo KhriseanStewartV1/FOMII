@@ -45,7 +45,6 @@ void safeScaffoldMessager(
       ),
     ),
   );
-
   ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }
 

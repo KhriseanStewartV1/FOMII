@@ -50,7 +50,7 @@ class UserServices {
 
   Future<List<String>> getFollowing(String userId) async {
     try {
-      final doc = await _db.doc(uid).collection("users").doc(userId).get();
+      final doc = await _db.doc(uid).get();
 
       if (!doc.exists) {
         return [];
@@ -58,12 +58,12 @@ class UserServices {
 
       final data = doc.data();
 
-      if (data == null || !data.containsKey('following')) {
+      if (data == null || !data.containsKey('followers')) {
         return [];
       }
 
       // Ensure it's a List<String>
-      return List<String>.from(data['following']);
+      return List<String>.from(data['followers']);
     } catch (e) {
       print("Error in getFollowing($userId): $e");
       return [];

@@ -22,16 +22,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _authpassword = TextEditingController();
   final _name = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final bool _loading = false;
+  bool _loading = false;
 
   handleSubmit() async {
     final email = _email.text.trim();
     final password = _password.text;
     final authpassword = _authpassword.text;
     final name = _name.text;
+    setState(() {
+      _loading = true;
+    });
 
     if (_formKey.currentState!.validate() != false) {
       if (password == authpassword) {
+          print(name);
         try {
           final check = await AuthService().createUser(
             context,
@@ -43,9 +47,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
             name,
             checkUniqueIdExists,
           );
+          final currentUser = FirebaseAuth.instance.currentUser;
           final createUser = await UserServices().createUser(
             UserModal(
-              userId: FirebaseAuth.instance.currentUser!.uid,
+              userId: currentUser!.uid,
               name: name,
               profilePic: '',
               createdAt: DateTime.now(),
@@ -60,7 +65,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
           } else {
             displaySnackBar(context, "Creating user error");
           }
-        } catch (e) {}
+        } catch (e) {
+          print(e);
+        } finally {
+          setState(() {
+            _loading = false;
+          });
+        }
       } else {
         displaySnackBar(context, "Passwords aren't the same");
       }

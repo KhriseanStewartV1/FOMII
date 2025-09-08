@@ -37,7 +37,6 @@ await AuthService()
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [IconButton(onPressed: () {print(AuthService().user!.phoneNumber);}, icon: Icon(Icons.question_answer))],
       ),
       body: SafeArea(
         child: Padding(
@@ -56,7 +55,7 @@ await AuthService()
               ),
               const SizedBox(height: 8),
               const Text(
-                "We’ll send you an SMS verification code",
+                "We'll send you an SMS verification code",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: Colors.black54),
               ),

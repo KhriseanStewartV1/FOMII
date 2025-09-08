@@ -27,6 +27,16 @@ class _InboxScreenState extends State<InboxScreen> {
     super.initState();
   }
 
+  Future<void> refresh() async {
+    setState(() {});
+  }
+
+  String uid = FirebaseAuth.instance.currentUser!.uid;
+  int selectedTab = 1;
+  bool isAnonymous = AuthService().user!.isAnonymous;
+
+  @override
+  Widget build(BuildContext context) {
   String getRelativeTime(dynamic timestamp) {
     if (timestamp is int) {
       // Convert milliseconds timestamp to DateTime
@@ -39,17 +49,7 @@ class _InboxScreenState extends State<InboxScreen> {
       return '';
     }
   }
-
-  Future<void> refresh() async {
-    setState(() {});
-  }
-
-  String uid = FirebaseAuth.instance.currentUser!.uid;
-  int selectedTab = 1;
-  bool isAnonymous = AuthService().user!.isAnonymous;
-
-  @override
-  Widget build(BuildContext context) {
+  
     return SafeArea(
       child: RefreshIndicator(
         onRefresh: refresh,
@@ -107,7 +107,7 @@ class _InboxScreenState extends State<InboxScreen> {
                         final nameFuture = ChatService().getUserName(
                           otherUserId,
                         );
-                        String lastMessage = getRelativeTime(
+                        String lastMessageAt = getRelativeTime(
                           chatDoc.lastMessageAt,
                         );
                         return FutureBuilder<String>(
@@ -132,7 +132,7 @@ class _InboxScreenState extends State<InboxScreen> {
                                 otherUid: otherUserId,
                                 name: name,
                                 lastMessage: chatDoc.lastMessage,
-                                time: lastMessage,
+                                time: lastMessageAt,
                               ),
                             );
                           },
@@ -178,9 +178,8 @@ class _InboxScreenState extends State<InboxScreen> {
               child: Icon(Icons.person, size: 30),
             );
           }
-          if (!snapshot.hasData || snapshot.data == null) {
+          if (!snapshot.hasData || snapshot.data == null || snapshot.data?['profilePic'] == '') {
             return CircleAvatar(
-              backgroundColor: Colors.white,
               child: Icon(Icons.person, size: 30),
             );
           }

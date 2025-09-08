@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:fomo_connect/router.dart';
 import 'package:fomo_connect/src/database/bootstrap/bootstrap.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
@@ -51,7 +52,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (notification != null) {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
-          'FOMII Connect', // channel id
+          'FOMII - The Blog', // channel id
           'Fomo Notifications', // channel name
           importance: Importance.high,
           priority: Priority.high,
@@ -80,7 +81,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService().terminatedApp(context);
@@ -90,12 +90,15 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FOMII - The Social App',
+      title: 'FOMII - The Blog',
       theme: Provider.of<ThemeProvider>(context).themeData,
-      darkTheme: darkMode,
       routes: AppRouter.routes,
       initialRoute: AppRouter.splash,
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+      FlutterQuillLocalizations.delegate,
+
+  ]
     );
   }
 }

@@ -26,33 +26,18 @@ class PostBottomButtons extends StatefulWidget {
   @override
   State<PostBottomButtons> createState() => _PostBottomButtonsState();
 }
-    final _commentController = TextEditingController();
+final _commentController = TextEditingController();
 
 class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProviderStateMixin{
 
-  late Animation<double> _likeScaleAnimation;
-   late AnimationController _likeController;
 
    @override
   void initState() {
     super.initState();
-
-    _likeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-      lowerBound: 0.7,
-      upperBound: 1.2,
-    );
-
-    _likeScaleAnimation = CurvedAnimation(
-      parent: _likeController,
-      curve: Curves.elasticOut,
-    );
   }
 
   @override
   void dispose() {
-    _likeController.dispose();
     super.dispose();
   }
 
@@ -79,37 +64,54 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
                   ? hexToColor("#FF5252")
                   : Colors.transparent,
             ),
-            onPressed: () {
+            onPressed: () async {
               Provider.of<PostProvider>(
                 context,
                 listen: false,
               ).toggleLike(widget.post.uuid, uid, context);
-              _likeController.forward(from: 0.7);
+              String? deviceToken = await NotificationService().getToken(widget.post.userId);
+              if(deviceToken != null && !isLiked){
+                await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "Liked", body: "Someone Liked your post!");
+              }
               HapticFeedback.lightImpact();
             },
             child: _buildBottomPostOptions(
               "${likesCount == 0 ? '' : likesCount}",
-              ScaleTransition(
-                scale: _likeScaleAnimation,
-                child: Icon(
-                  size: 24,
-                  isLiked ? Icons.favorite :
-                  Icons.favorite_outline,
-                  color: isLiked
-                      ? hexToColor("#FF5252")
-                      : Theme.of(context).colorScheme.primary
-                ),
+              Icon(
+                size: 24,
+                isLiked ? Icons.favorite :
+                Icons.favorite_outline,
+                color: isLiked
+                    ? hexToColor("#FF5252")
+                    : Theme.of(context).colorScheme.primary
               ),
             ),
           ),
-          TextButton(
-            onPressed: () {
-              showCommentModal();
-            },
-            child: _buildBottomPostOptions(
-              "",
-              Icon(FeatherIcons.messageSquare, size: 24),
-            ),
+          StreamBuilder(
+            stream: PostServices().numberOfComments(posts.uuid),
+            builder: (context, snap) {
+              if(snap.data!.docs.length == 0 || snap.data == null){
+                return TextButton(
+                  onPressed: () {
+                    showCommentModal();
+                  },
+                  child: _buildBottomPostOptions(
+                    "Comments",
+                    Icon(FeatherIcons.messageSquare, size: 24),
+                  ),
+                );
+              }
+              final commentNum = snap.data!.docs;
+              return TextButton(
+                onPressed: () {
+                  showCommentModal();
+                },
+                child: _buildBottomPostOptions(
+                  "${commentNum.length}",
+                  Icon(FeatherIcons.messageSquare, size: 24),
+                ),
+              );
+            }
           ),
           TextButton(
             style: TextButton.styleFrom(
@@ -118,11 +120,17 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
                   ? Colors.lightBlueAccent.shade200
                   : Colors.transparent,
             ),
-            onPressed: () {
+            onPressed: () async {
               Provider.of<PostProvider>(
                 context,
                 listen: false,
               ).toggleRepost(widget.post.uuid, uid, context);
+              String? deviceToken = await NotificationService().getToken(widget.post.userId);
+              if(deviceToken != null && !isReposted){
+                final check = await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "Repost", body: "Someone Reposted your post!");
+                print(check);
+              }
+              HapticFeedback.lightImpact();
             },
             child: _buildBottomPostOptions(
               "${repostsCount == 0 ? '' : repostsCount}",
@@ -220,7 +228,7 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
                 Text(
                   comment, // Replace with actual message
                   style: GoogleFonts.poppins(
-                    fontSize: 12,
+                    fontSize: 15,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -262,7 +270,7 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text("Comments", style: Theme.of(context).textTheme.titleLarge),
-                Divider(),
+                // Divider(),
                 SizedBox(height: 6),
                 SizedBox(
                   height: SizeConfig.heightPercentage(40),
@@ -300,7 +308,10 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
     final commentText = _commentController.text.trim();
     if (commentText.isEmpty) return;
     final userData = await UserServices().readUser(uid);
+    final autherData = await UserServices().readUser(widget.post.userId);
+    final deviceToken = autherData!['token'];
     if (userData == null) return; // handle error if needed
+    _commentController.clear(); // Clear input after sending
 
     await PostServices().addComment(
       commentText,
@@ -310,9 +321,7 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
       userData['name'],
       widget.post.uuid,
     );
-    await NotificationService.sendPushNotificationv2(deviceToken: userData['token'], title: "${userData['name']} left a comment", body: commentText);
-  HapticFeedback.lightImpact();
-    _commentController.clear(); // Clear input after sending
-    setState(() {}); // Optional, refresh UI if needed
+    await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "${userData['name']} left a comment", body: commentText);
+  HapticFeedback.mediumImpact();
   }
 }
