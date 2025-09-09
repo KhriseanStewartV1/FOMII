@@ -134,6 +134,7 @@ class _AddPostState extends State<AddPost> {
           deviceToken: deviceToken,
           title: "$userName mentioned you!",
           body: _controller.document.toPlainText(),
+          context: context
         );
       }
     }
@@ -150,6 +151,7 @@ class _AddPostState extends State<AddPost> {
           deviceToken: querySnap,
           title: "$userName Posted",
           body: _controller.document.toPlainText(),
+          context: context
         );
       }
     }

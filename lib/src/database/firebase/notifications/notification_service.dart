@@ -3,19 +3,27 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/router.dart';
+import 'package:fomo_connect/src/modal/notifications_model.dart';
+import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:permission_handler/permission_handler.dart';
+import 'package:uuid/uuid.dart';
 
 class NotificationService {
   static const String _baseUrl =
       "https://us-central1-fomo-connect.cloudfunctions.net";
   FirebaseMessaging fcm = FirebaseMessaging.instance;
   final db = FirebaseFirestore.instance;
+  final dbRef = FirebaseDatabase.instance.ref();
+  final _auth = FirebaseAuth.instance;
+  final _db = FirebaseDatabase.instance;
 
   Future<bool> requestNotificationPermission() async {
     var status = await Permission.notification.status;
@@ -156,6 +164,7 @@ class NotificationService {
     required String deviceToken,
     required String title,
     required String body,
+    required BuildContext context
   }) async {
     final url = Uri.parse("$_baseUrl/sendPushNotification");
 
@@ -168,6 +177,7 @@ class NotificationService {
 
       if (response.statusCode == 200) {
         print("✅ Notification sent: ${response.body}");
+        NotificationService().addNotification(NotificationModel(id: Uuid().v4(), title: title, body: body, dateTime: DateTime.now(), isRead: false));
         return true;
       } else {
         print("⚠️ Failed: ${response.statusCode} - ${response.body}");
@@ -204,5 +214,72 @@ class NotificationService {
       print("❌ Error sending push notification: $e");
       return false;
     }
+  }
+
+  // ================================================
+
+
+  DatabaseReference get _userNotiRef {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) throw Exception('User not signed in');
+    print(uid);
+    return _db.ref('notifications/$uid');
+  }
+
+Stream<List<NotificationModel>> streamNotifications() {
+  return _userNotiRef.onValue.map((event) {
+    final data = event.snapshot.value;
+
+    if (data == null) return [];
+
+    final mapData = Map<dynamic, dynamic>.from(data as Map);
+
+    return mapData.entries.map((entry) {
+      final mapItem = Map<String, dynamic>.from(entry.value as Map);
+
+      return NotificationModel.fromMap({
+        ...mapItem,
+        'id': entry.key, // store the key if needed for markAsRead/delete
+      });
+    }).toList();
+  });
+}
+
+
+
+  /// Add a notification
+  Future<void> addNotification(NotificationModel noti) async {
+    final newRef = _userNotiRef.push();
+    await newRef.set(noti.toMap());
+  }
+
+  /// Mark a single notification as read
+  Future<void> markAsRead(String id) async {
+    await _userNotiRef.child(id).update({'isRead': true});
+  }
+
+  /// Mark all notifications as read
+  Future<void> markAllAsRead() async {
+    final snapshot = await _userNotiRef.get();
+    final map = snapshot.value as Map<dynamic, dynamic>?;
+
+    if (map == null) return;
+
+    final updates = <String, dynamic>{};
+    map.forEach((key, value) {
+      updates['$key/isRead'] = true;
+    });
+
+    await _userNotiRef.update(updates);
+  }
+
+  /// Delete a notification
+  Future<void> deleteNotification(String id) async {
+    await _userNotiRef.child(id).remove();
+  }
+
+  /// Optional: refresh notifications (not really needed with stream)
+  Future<void> refreshNotifications() async {
+    await _userNotiRef.get();
   }
 }

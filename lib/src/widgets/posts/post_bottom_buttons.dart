@@ -45,7 +45,7 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
   Widget build(BuildContext context) {
     final uid = AuthService().user!.uid;
 
-    final posts = Provider.of<PostProvider>(context).posts[widget.post.uuid]!;
+    final posts = Provider.of<BatchPostProvider>(context).posts[widget.post.uuid]!;
     final isLiked = posts.likes.contains(uid);
     final isReposted = posts.reposts.contains(uid);
     final likesCount = posts.likes.length;
@@ -71,7 +71,7 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
               ).toggleLike(widget.post.uuid, uid, context);
               String? deviceToken = await NotificationService().getToken(widget.post.userId);
               if(deviceToken != null && !isLiked){
-                await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "Liked", body: "Someone Liked your post!");
+                await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "Liked", body: "Someone Liked your post!", context: context);
               }
               HapticFeedback.lightImpact();
             },
@@ -87,31 +87,14 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
               ),
             ),
           ),
-          StreamBuilder(
-            stream: PostServices().numberOfComments(posts.uuid),
-            builder: (context, snap) {
-              if(snap.data!.docs.length == 0 || snap.data == null){
-                return TextButton(
-                  onPressed: () {
-                    showCommentModal();
-                  },
-                  child: _buildBottomPostOptions(
-                    "Comments",
-                    Icon(FeatherIcons.messageSquare, size: 24),
-                  ),
-                );
-              }
-              final commentNum = snap.data!.docs;
-              return TextButton(
-                onPressed: () {
-                  showCommentModal();
-                },
-                child: _buildBottomPostOptions(
-                  "${commentNum.length}",
-                  Icon(FeatherIcons.messageSquare, size: 24),
-                ),
-              );
-            }
+          TextButton(
+            onPressed: () {
+              showCommentModal();
+            },
+            child: _buildBottomPostOptions(
+              "",
+              Icon(FeatherIcons.messageSquare, size: 24),
+            ),
           ),
           TextButton(
             style: TextButton.styleFrom(
@@ -127,7 +110,7 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
               ).toggleRepost(widget.post.uuid, uid, context);
               String? deviceToken = await NotificationService().getToken(widget.post.userId);
               if(deviceToken != null && !isReposted){
-                final check = await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "Repost", body: "Someone Reposted your post!");
+                final check = await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "Repost", body: "Someone Reposted your post!", context: context);
                 print(check);
               }
               HapticFeedback.lightImpact();
@@ -321,7 +304,7 @@ class _PostBottomButtonsState extends State<PostBottomButtons> with TickerProvid
       userData['name'],
       widget.post.uuid,
     );
-    await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "${userData['name']} left a comment", body: commentText);
+    await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "${userData['name']} left a comment", body: commentText, context: context);
   HapticFeedback.mediumImpact();
   }
 }

@@ -70,4 +70,31 @@ class PostModal {
       richText: parsedRichText,
     );
   }
+
+  factory PostModal.fromFirestore(Map<String, dynamic> data) {
+    List<Map<String, dynamic>> parsedRichText = [];
+
+    if (data['richText'] != null) {
+      if (data['richText'] is String) {
+        // If stored as a JSON string
+        parsedRichText = List<Map<String, dynamic>>.from(jsonDecode(data['richText']));
+      } else if (data['richText'] is List) {
+        // If stored as List of maps
+        parsedRichText = List<Map<String, dynamic>>.from(data['richText']);
+      }
+    }
+
+    return PostModal(
+      uuid: data['postId'] ?? '',
+      userId: data['userId'] ?? '',
+      userName: data['userName'] ?? '',
+      tags: List<String>.from(data['tags'] ?? []),
+      timestamp: DateTime.tryParse(data['timestamp'] ?? '') ?? DateTime.now(),
+      imageUrl: data['mediaUrl'],
+      likes: List<dynamic>.from(data['likes'] ?? []),
+      reposts: List<dynamic>.from(data['reposts'] ?? []),
+      mentions: List<dynamic>.from(data['mentions'] ?? []),
+      richText: parsedRichText,
+    );
+  }
 }

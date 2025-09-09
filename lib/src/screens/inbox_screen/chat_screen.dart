@@ -182,6 +182,7 @@ class _UserChatState extends State<UserChat> {
                           body: message,
                           deviceToken: token!,
                           title: username ?? 'Unknown',
+                          context: context
                         );
                         HapticFeedback.lightImpact();
                         setState(() => isSendingMessage = false);

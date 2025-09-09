@@ -144,6 +144,7 @@ class _UserProfileState extends State<UserProfile>
             title: "New Follower",
             body:
                 "${FirebaseAuth.instance.currentUser!.displayName} started following you.",
+            context: context
           );
         }
         displayRoundedSnackBar(context, followMessage);

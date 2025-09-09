@@ -165,3 +165,23 @@ class PostServices {
     }
   }
 }
+
+class BatchPostServices{
+  final _db = _instance.collection("posts");
+  Stream<List<PostModal>> readLatestPosts({int limit = 10}){
+    return _db
+    .orderBy("timestamp", descending: true)
+    .limit(limit)
+    .snapshots()
+    .map((snap) =>
+            snap.docs.map((doc) => PostModal.fromFirestore(doc.data())).toList());
+  }
+
+  Future<List<PostModal>> fetchMorePosts(DocumentSnapshot lastDoc, {int limit = 10}) async {
+    print("Loading 10");
+    final Query = await _db.orderBy("timestamp",  descending: true).startAfterDocument(lastDoc).limit(limit).get();
+
+    return Query.docs.map((doc) => PostModal.fromFirestore(doc.data())).toList();
+  }
+
+}

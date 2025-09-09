@@ -252,7 +252,6 @@ void loadUniqueBadge() async {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(

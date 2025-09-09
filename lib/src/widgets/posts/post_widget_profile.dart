@@ -77,6 +77,7 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
       deviceToken: userData['token'],
       title: "${userData['name']} left a comment",
       body: commentText,
+      context: context
     );
 
     _commentController.clear(); // Clear input after sending

@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return; // Check if widget is still active
       if (user != null) {
         // User is signed in
-        Navigator.pushReplacementNamed(context, AppRouter.mainLayout);
+        Navigator.pushReplacementNamed(context, AppRouter.authWrapper);
       } else {
         // Not signed in
         Navigator.pushReplacementNamed(context, AppRouter.login);

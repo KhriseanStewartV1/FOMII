@@ -6,7 +6,6 @@ import 'package:fomo_connect/src/database/bootstrap/bootstrap.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/provider/dark_mode.dart';
 import 'package:fomo_connect/src/database/provider/post_provider.dart';
-import 'package:fomo_connect/theme.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -37,7 +36,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => PostProvider()),
+        ChangeNotifierProvider(create: (context) => BatchPostProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
       ],
       child: const MyApp(),
@@ -53,7 +52,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
           'FOMII - The Blog', // channel id
-          'Fomo Notifications', // channel name
+          'FOMII Notifications', // channel name
           importance: Importance.high,
           priority: Priority.high,
         );

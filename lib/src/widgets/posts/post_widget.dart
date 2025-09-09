@@ -81,7 +81,7 @@ class _PostWidgetState extends State<PostWidget> {
       userData['name'],
       widget.post.uuid,
     );
-    await NotificationService.sendPushNotificationv2(deviceToken: userData['token'], title: "${userData['name']} left a comment", body: commentText);
+    await NotificationService.sendPushNotificationv2(deviceToken: userData['token'], title: "${userData['name']} left a comment", body: commentText, context: context);
   HapticFeedback.lightImpact();
     _commentController.clear(); // Clear input after sending
     setState(() {}); // Optional, refresh UI if needed
@@ -117,6 +117,9 @@ class _PostWidgetState extends State<PostWidget> {
               controller: controller,
               scrollController: ScrollController(),
               focusNode: FocusNode(),
+              config: quill.QuillEditorConfig(
+                
+              ),
             ),
           ),
           if (size.width < 361)
@@ -567,7 +570,7 @@ class _PostWidgetState extends State<PostWidget> {
                           );
                           String? deviceToken = await NotificationService().getToken(post.userId);
                           if(deviceToken != null && isFollowing){
-                            await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "New Follower", body: "${AuthService().user!.displayName} Followed you");
+                            await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "New Follower", body: "${AuthService().user!.displayName} Followed you", context: context);
                           }
                           setState(() {
                             followMessage = message;
