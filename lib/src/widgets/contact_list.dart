@@ -81,7 +81,7 @@ class _ContactListState extends State<ContactList> {
         future: loadRegisteredContacts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: LoadingScreen());
+            return Center(child: LoadingScreen());
           }
           if (snapshot.hasError) {
             return Center(child: Text("Error: ${snapshot.error}"));

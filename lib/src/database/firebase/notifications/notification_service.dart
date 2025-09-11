@@ -8,8 +8,8 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/router.dart';
+import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/modal/notifications_model.dart';
-import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -177,7 +177,7 @@ class NotificationService {
 
       if (response.statusCode == 200) {
         print("✅ Notification sent: ${response.body}");
-        NotificationService().addNotification(NotificationModel(id: Uuid().v4(), title: title, body: body, dateTime: DateTime.now(), isRead: false));
+        NotificationService().addNotification(NotificationModel(id: Uuid().v4(), title: title, body: body, dateTime: DateTime.now(), isRead: false, receiverUid: AuthService().user!.uid));
         return true;
       } else {
         print("⚠️ Failed: ${response.statusCode} - ${response.body}");
@@ -226,24 +226,26 @@ class NotificationService {
     return _db.ref('notifications/$uid');
   }
 
-Stream<List<NotificationModel>> streamNotifications() {
-  return _userNotiRef.onValue.map((event) {
-    final data = event.snapshot.value;
 
-    if (data == null) return [];
+  Stream<List<NotificationModel>> streamNotifications(String senderUid) {
+    return _userNotiRef.onValue.map((event) {
+      final data = event.snapshot.value;
 
-    final mapData = Map<dynamic, dynamic>.from(data as Map);
+      if (data == null) return [];
 
-    return mapData.entries.map((entry) {
-      final mapItem = Map<String, dynamic>.from(entry.value as Map);
+      final mapData = Map<dynamic, dynamic>.from(data as Map);
 
-      return NotificationModel.fromMap({
-        ...mapItem,
-        'id': entry.key, // store the key if needed for markAsRead/delete
-      });
-    }).toList();
-  });
-}
+      return mapData.entries.map((entry) {
+        final mapItem = Map<String, dynamic>.from(entry.value as Map);
+
+        return NotificationModel.fromMap({
+          ...mapItem,
+          'id': entry.key, // store the key if needed for markAsRead/delete
+          'senderUid': senderUid
+        });
+      }).toList();
+    });
+  }
 
 
 
@@ -261,7 +263,7 @@ Stream<List<NotificationModel>> streamNotifications() {
   /// Mark all notifications as read
   Future<void> markAllAsRead() async {
     final snapshot = await _userNotiRef.get();
-    final map = snapshot.value as Map<dynamic, dynamic>?;
+    final map = snapshot.value as Map<dynamic, dynamic>?; 
 
     if (map == null) return;
 

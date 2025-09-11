@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 
+// ignore: must_be_immutable
 class LoadingScreen extends StatelessWidget {
-  const LoadingScreen({super.key});
+  Color? color;
+  double? value;
+  LoadingScreen({super.key, this.color, this.value});
 
   @override
   Widget build(BuildContext context) {
-    return CircularProgressIndicator();
+    return CircularProgressIndicator(
+      backgroundColor: color,
+      value: value,
+
+    );
   }
 }

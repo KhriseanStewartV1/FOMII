@@ -76,7 +76,7 @@ class _BottomSheetScreenState extends State<BottomSheetScreen> {
         stream: ChatService().listMutualFollowers(uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: LoadingScreen());
+            return Center(child: LoadingScreen());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text("No Mutual Followers"));

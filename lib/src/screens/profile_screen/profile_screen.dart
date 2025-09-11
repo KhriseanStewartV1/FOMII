@@ -581,7 +581,7 @@ void loadUniqueBadge() async {
       future: UserServices().readUser(uid),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return Center(child: const LoadingScreen());
+          return Center(child: LoadingScreen());
         }
         if (!snap.hasData) {
           return const LogInScreen();
@@ -798,7 +798,7 @@ void loadUniqueBadge() async {
       stream: PostServices().readYourPosts(uid),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const LoadingScreen();
+          return LoadingScreen();
         }
         if (!snap.hasData || snap.data!.isEmpty) {
           return const Center(child: Text("You haven't posted yet"));

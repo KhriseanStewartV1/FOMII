@@ -4,6 +4,7 @@ import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/router.dart';
+import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/provider/post_provider.dart';
@@ -123,19 +124,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(_posts);
+    print(AuthService().user!.emailVerified);
     return Scaffold(
       appBar: AppBar(
+        actionsPadding: EdgeInsets.symmetric(horizontal: 8),
         elevation: 0,
-        leading: Center(
-          child: Text(
-            "FOMII",
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-        ),
+        leading: AspectRatio(aspectRatio: 1, child: Image.asset('assets/fomo-bgremove.png')),
         title: _buildToggle(),
         actions: [
           IconButton(

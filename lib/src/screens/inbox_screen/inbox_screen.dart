@@ -91,7 +91,7 @@ class _InboxScreenState extends State<InboxScreen> {
                   stream: ChatService().listInboxV2(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: LoadingScreen());
+                      return Center(child: LoadingScreen());
                     }
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
                       return const Center(child: Text("No chats yet"));

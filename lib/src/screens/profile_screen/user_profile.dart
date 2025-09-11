@@ -159,21 +159,6 @@ class _UserProfileState extends State<UserProfile>
     ;
   }
 
-  // void checkStatus() async {
-  //   final userData = await UserServices().readUser(widget.user['userId']);
-  //   try {
-  //     if (userData!['status'] != null) {
-  //       setState(() {
-  //         status = true;
-  //       });
-  //     } else {
-  //       status = false;
-  //     }
-  //   } catch (e) {
-  //     print(e);
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     final userName = widget.user['name'];
@@ -289,7 +274,7 @@ class _UserProfileState extends State<UserProfile>
       future: UserServices().readUser(uid),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return Center(child: const LoadingScreen());
+          return Center(child: LoadingScreen());
         }
         if (!snap.hasData) {
           return const LogInScreen();
@@ -464,7 +449,7 @@ class _UserProfileState extends State<UserProfile>
       stream: PostServices().readYourPosts(uid),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const LoadingScreen();
+          return LoadingScreen();
         }
         if (!snap.hasData || snap.data!.isEmpty) {
           return const Center(child: Text("You haven't posted yet"));

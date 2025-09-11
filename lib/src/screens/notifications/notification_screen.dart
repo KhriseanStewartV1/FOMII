@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/modal/notifications_model.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -59,7 +60,7 @@ class NotificationScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<List<NotificationModel>>(
-        stream: NotificationService().streamNotifications(),
+        stream: NotificationService().streamNotifications(uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -116,10 +117,11 @@ class NotificationScreen extends StatelessWidget {
                             noti.body,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 13),
+                            style: const TextStyle(fontSize: 12),
                           )
                         : null,
                     trailing: Text(
+                      // ignore: unnecessary_null_comparison
                       noti.dateTime != null ? _formatDate(noti.dateTime.toString()) : '',
                       style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),

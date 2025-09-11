@@ -2,7 +2,7 @@ class NotificationModel {
   String id; // Unique ID for the notification
   String title;
   String body;
-  String? receiverUid; // Corrected spelling
+  String receiverUid; // Corrected spelling
   DateTime dateTime; // Use DateTime for easier sorting & comparison
   bool isRead;
   String? senderUid; // Who sent the notification
@@ -17,7 +17,7 @@ class NotificationModel {
     required this.body,
     required this.dateTime,
     required this.isRead,
-    this.receiverUid,
+    required this.receiverUid,
     this.senderUid,
     this.type,
     this.payload,

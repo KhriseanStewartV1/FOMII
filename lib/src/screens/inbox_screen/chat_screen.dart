@@ -155,7 +155,7 @@ class _UserChatState extends State<UserChat> {
                   ),
                   IconButton(
                     icon: isSendingMessage
-                        ? const LoadingScreen()
+                        ? LoadingScreen()
                         : const Icon(Icons.send, color: Colors.white),
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.lightBlueAccent,
