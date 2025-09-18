@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
@@ -48,7 +49,7 @@ class _UserProfileState extends State<UserProfile>
 
   void loadUniqueBadge() async {
   try {
-    final userData = await UserServices().readUser(uid);
+    final userData = await UserServices().readUser(AuthService().user!.uid);
 
     if (userData != null && userData['badges'] != null) {
       final badges = List<String>.from(userData['badges']); // cast to List<String>
@@ -144,7 +145,8 @@ class _UserProfileState extends State<UserProfile>
             title: "New Follower",
             body:
                 "${FirebaseAuth.instance.currentUser!.displayName} started following you.",
-            context: context
+            context: context,
+            receiverUid: widget.user['userId']
           );
         }
         displayRoundedSnackBar(context, followMessage);

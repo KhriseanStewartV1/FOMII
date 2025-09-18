@@ -5,9 +5,9 @@ import 'package:fomo_connect/src/database/telephone/telephone_service.dart';
 import 'package:fomo_connect/src/modal/user_modal.dart';
 
 final _instance = FirebaseFirestore.instance;
-  final uid = FirebaseAuth.instance.currentUser!.uid;
 
 class UserServices {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
   final _db = _instance.collection("users");
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getUIdSearch(String uIdSearch) {
@@ -143,7 +143,6 @@ class UserServices {
         return null;
       } else {
         final count = doc['$countType'];
-        print(count.length);
         return "${count.length}";
       }
     } catch (e) {
@@ -170,34 +169,36 @@ class UserServices {
     return candidate;
   }
 
-            Future<Map<String, dynamic>?> getUserData(Contact contact) async {
-              try {
-                // Always format number before query
-                final rawNumber = contact.phones.isNotEmpty ? contact.phones[0].number : null;
-                if (rawNumber == null) return null;
+  Future<Map<String, dynamic>?> getUserData(Contact contact) async {
+    try {
+      // Always format number before query
+      final rawNumber = contact.phones.isNotEmpty
+          ? contact.phones[0].number
+          : null;
+      if (rawNumber == null) return null;
 
-                final formatted = formatNumber(rawNumber); // use your formatter
-                if (formatted == null) return null;
+      final formatted = formatNumber(rawNumber); // use your formatter
+      if (formatted == null) return null;
 
-                final snap = await FirebaseFirestore.instance
-                    .collection("users")
-                    .where("telephone", isEqualTo: formatted)
-                    .limit(1)
-                    .get();
+      final snap = await FirebaseFirestore.instance
+          .collection("users")
+          .where("telephone", isEqualTo: formatted)
+          .limit(1)
+          .get();
 
-                if (snap.docs.isNotEmpty) {
-                  final userData = snap.docs.first.data();
-                  return userData;
-                  // 👉 Here you can navigate to a profile screen or start a chat
-                } else {
-                  print("No user with number $formatted");
-                  return null;
-                }
-              } catch (e) {
-                print("Error fetching user data: $e");
-                return null;
-              }
-            }
+      if (snap.docs.isNotEmpty) {
+        final userData = snap.docs.first.data();
+        return userData;
+        // 👉 Here you can navigate to a profile screen or start a chat
+      } else {
+        print("No user with number $formatted");
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching user data: $e");
+      return null;
+    }
+  }
 }
 
 Future<bool> checkUniqueIdExists(String uniqueId) async {

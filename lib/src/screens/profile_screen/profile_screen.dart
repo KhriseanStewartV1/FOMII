@@ -50,45 +50,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     loadUniqueBadge();
   }
 
-void loadUniqueBadge() async {
-  try {
-    final userData = await UserServices().readUser(uid);
+  void loadUniqueBadge() async {
+    try {
+      final userData = await UserServices().readUser(uid);
 
-    if (userData != null && userData['badges'] != null) {
-      final badges = List<String>.from(userData['badges']); // cast to List<String>
+      if (userData != null && userData['badges'] != null) {
+        final badges = List<String>.from(
+          userData['badges'],
+        ); // cast to List<String>
 
-      for (final badge in badges) {
-        switch (badge) {
-          case "tester":
-            setState(() {
-              tester = true;
-            });
-            break;
-          case "10_posts":
-            setState(() {
-              posts1 = true;
-            });
-            break;
-          case "100_posts":
-            setState(() {
-              posts2 = true;
-            });
-            break;
-          case "100_followers":
-            setState(() {
-              followers1 = true;
-            });
-            break;
-          default:
-            setState(() { });
-            break;
+        for (final badge in badges) {
+          switch (badge) {
+            case "tester":
+              setState(() {
+                tester = true;
+              });
+              break;
+            case "10_posts":
+              setState(() {
+                posts1 = true;
+              });
+              break;
+            case "100_posts":
+              setState(() {
+                posts2 = true;
+              });
+              break;
+            case "100_followers":
+              setState(() {
+                followers1 = true;
+              });
+              break;
+            default:
+              setState(() {});
+              break;
+          }
         }
       }
+    } catch (e) {
+      print("Error getting uniqueId: $e");
     }
-  } catch (e) {
-    print("Error getting uniqueId: $e");
   }
-}
 
   void loadUniqueId() async {
     try {
@@ -105,20 +107,20 @@ void loadUniqueBadge() async {
     }
   }
 
-  // void checkStatus() async {
-  //   final userData = await UserServices().readUser(uid);
-  //   try {
-  //     if (userData!['status'] != null) {
-  //       setState(() {
-  //         status = true;
-  //       });
-  //     } else {
-  //       status = false;
-  //     }
-  //   } catch (e) {
-  //     print(e);
-  //   }
-  // }
+  void checkStatus() async {
+    final userData = await UserServices().readUser(uid);
+    try {
+      if (userData!['status'] != null) {
+        setState(() {
+          status = true;
+        });
+      } else {
+        status = false;
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
 
   void getCount() async {
     final followerCount = await UserServices().getCount(uid, "followers");
@@ -130,7 +132,6 @@ void loadUniqueBadge() async {
       followers = followerCount!;
       following = followingCount!;
     });
-    print("Following: $following _ Followers: $followers");
   }
 
   void updateUser() async {
@@ -163,7 +164,7 @@ void loadUniqueBadge() async {
   void loadUser() async {
     loadUniqueId();
     getCount();
-    // checkStatus();
+    checkStatus();
   }
 
   Future<void> pickImage() async {
@@ -184,6 +185,7 @@ void loadUniqueBadge() async {
       if (compressed == null) return;
 
       final url = await ImageService().uploadProfile(
+        context,
         file: toFile(compressed),
         uid: uid,
       );
@@ -301,9 +303,7 @@ void loadUniqueBadge() async {
                             );
                           },
                           child: Text(
-                            anonymous ?
-                            'Anonymous' :
-                            "@$uniqueId" ,
+                            anonymous ? 'Anonymous' : "@$uniqueId",
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                             style: GoogleFonts.poppins(
@@ -589,32 +589,26 @@ void loadUniqueBadge() async {
 
         final doc = snap.data!;
         String createdAt = 'Loading Creation Date';
+        String? bio;
+        String creationDate = formatDateString(doc['createdAt']);
         try {
-          String creationDate = formatDateString(doc['createdAt']);
-          setState(() {
-            createdAt = creationDate;
-          });
+          createdAt = creationDate;
         } catch (e) {
           print("Error getting creation date: $e");
         }
-        String bio = 'Anonymous';
-        try{
-          setState(() {
-           bio = doc.get('bio') ?? 'No Bio';
-          });
-
-        }catch(e){
-        }
+        //bio
+        bio = doc.get('bio') ?? 'No Bio';
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             GestureDetector(
+              onTap: () => _showProfileOptions(),
               onLongPress: () {
-                if (doc['profilePic'] == '' || doc['profilePic'].isEmpty) {
-                  _showProfileOptions();
-                } else {
+                if (status == false) {
                   _openFullScreenImage(context, doc['profilePic']);
+                } else {
+                  _openFullScreenImage(context, doc['status']);
                 }
               },
               child: _buildPicCard(context),
@@ -637,7 +631,7 @@ void loadUniqueBadge() async {
                           ),
                         ),
                       ),
-                      tester ? BetaTesterBadge() : SizedBox.shrink()
+                      tester ? BetaTesterBadge() : SizedBox.shrink(),
                     ],
                   ),
                   Row(
@@ -645,8 +639,7 @@ void loadUniqueBadge() async {
                     children: [
                       Flexible(
                         child: Text(
-                          anonymous ? 'Anonymous' :
-                          createdAt,
+                          anonymous ? 'Anonymous' : createdAt,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.poppins(fontSize: 12),
@@ -664,7 +657,7 @@ void loadUniqueBadge() async {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Row(children: [_buildBioField(bio, doc)]),
+                  Row(children: [_buildBioField(bio ?? '', doc)]),
                 ],
               ),
             ),
@@ -692,7 +685,6 @@ void loadUniqueBadge() async {
             icon: const Icon(Icons.edit),
           ),
         ),
-        onFieldSubmitted: (value) => UserServices().updateUser({'bio': value}),
       ),
     );
   }
@@ -713,15 +705,19 @@ void loadUniqueBadge() async {
           );
         }
 
-        if (!snapshot.hasData || !snapshot.data!.exists || AuthService().user!.isAnonymous) {
+        if (!snapshot.hasData ||
+            !snapshot.data!.exists ||
+            AuthService().user!.isAnonymous) {
           return _defaultPicCard(context); // fallback
         }
 
         final data = snapshot.data!;
-        String? profilePic = data['profilePic'];
+        String? profilePic;
+        if (data.data()!.containsKey("profilePic")) {
+          profilePic = data['profilePic'];
+        }
 
-        bool isActive =
-            status;
+        bool isActive = status;
 
         return Stack(
           children: [
@@ -744,7 +740,7 @@ void loadUniqueBadge() async {
               child: Padding(
                 padding: const EdgeInsets.all(4.0), // space for the ring
                 child: ClipOval(
-                  child: profilePic == null || profilePic.isEmpty
+                  child: profilePic == null || profilePic == ''
                       ? _defaultPicCard(context)
                       : CachedNetworkImage(
                           imageUrl: profilePic,

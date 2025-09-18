@@ -9,6 +9,8 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    //crash analytics
+    id("com.google.firebase.crashlytics") version "3.0.6" apply false
 }
 
 val keystoreProperties = Properties()
@@ -37,10 +39,10 @@ android {
         applicationId = "com.terobytez.fomii_connect"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = 35
-        versionCode = 15
-        versionName = "1.4.1"
+        versionCode = 17
+        versionName = "1.5.2"
     }
     signingConfigs {
         create("release") {

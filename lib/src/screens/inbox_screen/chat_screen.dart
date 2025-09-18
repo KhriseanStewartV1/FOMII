@@ -75,9 +75,11 @@ class _UserChatState extends State<UserChat> {
     final String chatId = widget.chatId;
 
     return Scaffold(
-      appBar: AppBar(title: Text(otherUserName ?? 'Loading...'),         
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      elevation: 0,),
+      appBar: AppBar(
+        title: Text(otherUserName ?? 'Loading...'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -88,7 +90,12 @@ class _UserChatState extends State<UserChat> {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
+
                   final messages = snapshot.data!;
+                  ChatService().markMessagesAsRead(
+                    chatId,
+                    AuthService().user!.uid,
+                  );
 
                   return ListView.builder(
                     reverse: true, // ✅ only this, no manual reversing
@@ -182,7 +189,8 @@ class _UserChatState extends State<UserChat> {
                           body: message,
                           deviceToken: token!,
                           title: username ?? 'Unknown',
-                          context: context
+                          context: context,
+                          receiverUid: widget.recieverId,
                         );
                         HapticFeedback.lightImpact();
                         setState(() => isSendingMessage = false);

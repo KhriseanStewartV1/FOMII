@@ -73,13 +73,12 @@ class NotificationService {
   }
 
   void pushToken(String uid) async {
-
     try {
-    String? token = await fcm.getToken();
-    if (token == null) {
-      print("FCM token is null");
-      return;
-    }
+      String? token = await fcm.getToken();
+      if (token == null) {
+        print("FCM token is null");
+        return;
+      }
       final doc = await db.collection('users').doc(uid).get();
       final savedToken = doc.data()?['token'] as String?;
 
@@ -164,7 +163,8 @@ class NotificationService {
     required String deviceToken,
     required String title,
     required String body,
-    required BuildContext context
+    required BuildContext context,
+    required String receiverUid,
   }) async {
     final url = Uri.parse("$_baseUrl/sendPushNotification");
 
@@ -177,7 +177,17 @@ class NotificationService {
 
       if (response.statusCode == 200) {
         print("✅ Notification sent: ${response.body}");
-        NotificationService().addNotification(NotificationModel(id: Uuid().v4(), title: title, body: body, dateTime: DateTime.now(), isRead: false, receiverUid: AuthService().user!.uid));
+        NotificationService().addNotification(
+          NotificationModel(
+            id: Uuid().v4(),
+            title: title,
+            body: body,
+            dateTime: DateTime.now(),
+            isRead: false,
+            receiverUid: AuthService().user!.uid,
+          ),
+          receiverUid
+        );
         return true;
       } else {
         print("⚠️ Failed: ${response.statusCode} - ${response.body}");
@@ -218,52 +228,40 @@ class NotificationService {
 
   // ================================================
 
-
-  DatabaseReference get _userNotiRef {
+  DatabaseReference _userNotiRef (String receiverUid) {
     final uid = _auth.currentUser?.uid;
     if (uid == null) throw Exception('User not signed in');
-    print(uid);
-    return _db.ref('notifications/$uid');
+    return _db.ref('notifications/$receiverUid');
   }
 
-
-  Stream<List<NotificationModel>> streamNotifications(String senderUid) {
-    return _userNotiRef.onValue.map((event) {
+  Stream<List<NotificationModel>> streamUserNotifications(String uid) {
+    final ref = _userNotiRef(uid);
+    return ref.onValue.map((event) {
       final data = event.snapshot.value;
-
       if (data == null) return [];
-
       final mapData = Map<dynamic, dynamic>.from(data as Map);
-
       return mapData.entries.map((entry) {
         final mapItem = Map<String, dynamic>.from(entry.value as Map);
-
-        return NotificationModel.fromMap({
-          ...mapItem,
-          'id': entry.key, // store the key if needed for markAsRead/delete
-          'senderUid': senderUid
-        });
+        return NotificationModel.fromMap({...mapItem, 'id': entry.key});
       }).toList();
     });
   }
 
-
-
   /// Add a notification
-  Future<void> addNotification(NotificationModel noti) async {
-    final newRef = _userNotiRef.push();
+  Future<void> addNotification(NotificationModel noti, String receiverUid) async {
+    final newRef = _userNotiRef(receiverUid).push();
     await newRef.set(noti.toMap());
   }
 
   /// Mark a single notification as read
   Future<void> markAsRead(String id) async {
-    await _userNotiRef.child(id).update({'isRead': true});
+    await _userNotiRef(AuthService().user!.uid).child(id).update({'isRead': true});
   }
 
   /// Mark all notifications as read
   Future<void> markAllAsRead() async {
-    final snapshot = await _userNotiRef.get();
-    final map = snapshot.value as Map<dynamic, dynamic>?; 
+    final snapshot = await _userNotiRef(AuthService().user!.uid).get();
+    final map = snapshot.value as Map<dynamic, dynamic>?;
 
     if (map == null) return;
 
@@ -272,16 +270,16 @@ class NotificationService {
       updates['$key/isRead'] = true;
     });
 
-    await _userNotiRef.update(updates);
+    await _userNotiRef(AuthService().user!.uid).update(updates);
   }
 
   /// Delete a notification
   Future<void> deleteNotification(String id) async {
-    await _userNotiRef.child(id).remove();
+    await _userNotiRef(AuthService().user!.uid).child(id).remove();
   }
 
   /// Optional: refresh notifications (not really needed with stream)
   Future<void> refreshNotifications() async {
-    await _userNotiRef.get();
+    await _userNotiRef(AuthService().user!.uid).get();
   }
 }

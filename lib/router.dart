@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/src/main_layout/main_layout.dart';
+import 'package:fomo_connect/src/screens/add_post/add_event.dart';
 import 'package:fomo_connect/src/screens/add_post/add_post.dart';
 import 'package:fomo_connect/src/screens/auth/auth_wrapper/auth_wrapper.dart';
 import 'package:fomo_connect/src/screens/auth/confirm_email/confirm_email_screen.dart';
@@ -28,6 +29,7 @@ class AppRouter {
 
   static const String notifications = "/notifications";
   static const String addPost = "/addPost";
+  static const String addEvent = "/addEvent";
 
 
 
@@ -51,6 +53,7 @@ class AppRouter {
 
       notifications: (context) => const NotificationScreen(),
       addPost: (context) => const AddPost(),
+      addEvent: (context) => const AddEventScreen(),
     };
   }
 

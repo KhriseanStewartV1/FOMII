@@ -37,16 +37,16 @@ class AuthService {
   }
 
   Future<UserCredential?> signInAnonymous(BuildContext context) async {
-    try{
+    try {
       final cred = await _instance.signInAnonymously();
       return cred;
-    }catch(e){
+    } catch (e) {
       displayRoundedSnackBar(context, "Error Occurred");
       return null;
     }
   }
 
-  Future<UserCredential?> readUser(
+  Future<UserCredential?> loginUser(
     BuildContext context,
     String email,
     String password,
@@ -57,8 +57,8 @@ class AuthService {
         password: password,
       );
       return user;
-    } on FirebaseAuthException catch (e) {
-      displayFloatingSnackBar(context, "Error: $e");
+    } on FirebaseException catch (e) {
+      displayFloatingSnackBar(context, "Error: ${e.message}");
       return null;
     }
   }
@@ -174,7 +174,6 @@ class AuthService {
       // Sign in to Firebase
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithCredential(credential);
-          
 
       displayRoundedSnackBar(
         context,

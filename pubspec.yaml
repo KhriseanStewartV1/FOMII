@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.4.1+15
+version: 1.5.2+17
 
 environment:
   sdk: ^3.8.1
@@ -68,6 +68,13 @@ dependencies:
   phone_numbers_parser: ^9.0.11
   firebase_database: ^12.0.1
   flutter_quill: ^11.4.2
+  badges: ^3.1.2
+  video_compress: ^3.1.4
+  carousel_slider: ^5.1.1
+  video_player: ^2.10.0
+  chewie: ^1.13.0
+  video_thumbnail: ^0.5.6
+  shimmer: ^3.0.0
 
 
 
@@ -105,21 +112,8 @@ flutter:
     - assets/filters/
     - assets/filters/Burning_Effect/
     - assets/filters/Devil_Neon_Horns/
-    - assets/filters/Elephant_Trunk/
-    - assets/filters/Emotion_Meter/
-    - assets/filters/Emotions_Exaggerator/
-    - assets/filters/Fire_Effect/
-    - assets/filters/Flower_Face/
-    - assets/filters/Hope/
-    - assets/filters/Humanoid/
-    - assets/filters/Makeup_Look_Simple/
     - assets/filters/Makeup_Look_w_Slipt_Screen_Effect/
-    - assets/filters/Ping_Pong_Minigame/
     - assets/filters/Pixel_Heart_Particles/
-    - assets/filters/Snail/
-    - assets/filters/Stallone/
-    - assets/filters/Vendetta_Mask/
-    - assets/filters/Viking_Helmet_PBR/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/main_layout/main_layout.dart';
 import 'package:fomo_connect/src/screens/auth/confirm_email/confirm_email_screen.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
@@ -24,9 +25,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (!snapshot.hasData || snapshot.data == null) {
           return LogInScreen();
         }
-        final user = snapshot.data;
         
-        if (user!.emailVerified) {
+        if (AuthService().user!.emailVerified) {
           return MainLayout();
         } else {
           return ConfirmEmailScreen();

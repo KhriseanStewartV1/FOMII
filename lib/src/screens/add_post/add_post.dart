@@ -14,6 +14,7 @@ import 'package:fomo_connect/src/database/storage/image.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
+import 'package:fomo_connect/src/widgets/video_player_screen/video_player_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
@@ -35,7 +36,7 @@ class _AddPostState extends State<AddPost> {
   late final ScrollController _scrollController;
   late final FocusNode _focusNode;
 
-  XFile? file;
+  List<Map<String, dynamic>> mediaFiles = [];
   File? postFile;
   bool _isLoading = false;
 
@@ -43,12 +44,14 @@ class _AddPostState extends State<AddPost> {
   List<String> tags = [];
   List<String> mentionedUsers = [];
 
+  double progress = 0;
+  bool loadingVideo = false;
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _focusNode = FocusNode();
-
   }
 
   @override
@@ -60,9 +63,9 @@ class _AddPostState extends State<AddPost> {
     super.dispose();
   }
 
-
   Future<void> pickImage({bool fromCamera = false}) async {
     final dir = await Directory.systemTemp.createTemp();
+    if (mediaFiles.length >= 3) return;
     try {
       final image = await ImagePicker().pickImage(
         source: fromCamera ? ImageSource.camera : ImageSource.gallery,
@@ -79,17 +82,58 @@ class _AddPostState extends State<AddPost> {
 
         final finalFile = await toFile(compressImg!);
         setState(() {
-          file = compressImg;
-          postFile = finalFile;
+          if (mediaFiles.length < 3) {
+            mediaFiles.add({"file": finalFile, "type": "image"});
+          }
         });
 
         // Upload and insert image into Quill doc
-        await ImageService().uploadImage(file: postFile!, uid: user!.uid);
+        await ImageService().uploadImage(file: finalFile, uid: user!.uid);
         final index = _controller.selection.baseOffset;
         _controller.document.insert(index, '\n');
       }
     } catch (e) {
       debugPrint("Image pick error: $e");
+    }
+  }
+
+  Future<void> pickVideo() async {
+    setState(() {
+      loadingVideo = true;
+    });
+    if (mediaFiles.length >= 3) return;
+    try {
+      final video = await ImagePicker().pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: Duration(minutes: 3),
+      );
+      if (video != null) {
+        final fileVid = toFile(video);
+        final compressVid = await compressVideo(
+          fileVid,
+          'compressed_${DateTime.now().millisecondsSinceEpoch}.mp4',
+        );
+
+        setState(() {
+          if (mediaFiles.length < 3) {
+            mediaFiles.add({"file": compressVid, "type": "video"});
+          }
+        });
+
+        // Upload and insert image into Quill doc
+        await ImageService().uploadVideoWithProgress(
+          file: compressVid!,
+          uid: user!.uid,
+        );
+        final index = _controller.selection.baseOffset;
+        _controller.document.insert(index, '\n');
+      }
+    } catch (e) {
+      debugPrint("Video pick error: $e");
+    } finally {
+      setState(() {
+        loadingVideo = false;
+      });
     }
   }
 
@@ -121,6 +165,7 @@ class _AddPostState extends State<AddPost> {
           title: "$userName mentioned you!",
           body: _controller.document.toPlainText(),
           context: context,
+          receiverUid: mentionedUniqueId,
         );
       }
     }
@@ -137,6 +182,7 @@ class _AddPostState extends State<AddPost> {
           title: "$userName Posted",
           body: _controller.document.toPlainText(),
           context: context,
+          receiverUid: people,
         );
       }
     }
@@ -144,13 +190,54 @@ class _AddPostState extends State<AddPost> {
 
   Future<void> handleSubmit() async {
     setState(() => _isLoading = true);
-
     final postContent = _controller.document.toDelta().toJson();
 
     try {
-      String? url;
-      if (file != null) {
-        url = await ImageService().uploadImage(file: postFile!, uid: user!.uid);
+      Map<String, dynamic> mediaUrls = {};
+      int counter = 0;
+      double totalBytes = 0;
+      double uploadedBytes = 0;
+
+      // calculate total bytes of all media files
+      for (var media in mediaFiles) {
+        totalBytes += await media["file"].length();
+      }
+
+      for (var media in mediaFiles) {
+        final file = media["file"] as File;
+        final type = media["type"] as String;
+
+        String? url;
+
+        if (type == "image") {
+          url = await ImageService().uploadImage(
+            file: file,
+            uid: user!.uid,
+            onProgress: (d) {
+              setState(() {
+                uploadedBytes += d;
+                progress = uploadedBytes / totalBytes;
+                print(progress);
+              });
+            },
+          );
+        } else if (type == "video") {
+          url = await ImageService().uploadVideoWithProgress(
+            file: file,
+            uid: user!.uid,
+            onProgress: (d) {
+              setState(() {
+                uploadedBytes += d * file.lengthSync();
+                progress = uploadedBytes / totalBytes;
+              });
+            },
+          );
+        }
+
+        if (url != null) {
+          mediaUrls["media_$counter"] = {"url": url, "type": type};
+          counter++;
+        }
       }
 
       PostModal post = PostModal(
@@ -160,20 +247,24 @@ class _AddPostState extends State<AddPost> {
         richText: postContent,
         tags: tags,
         timestamp: DateTime.now(),
-        imageUrl: url,
+        media: [mediaUrls],
       );
 
       await PostServices().post(post, uuid);
 
       HapticFeedback.lightImpact();
       await checkUser();
-      await followersNoti();
+      // await followersNoti();
       displayRoundedSnackBar(context, "Posted");
       Navigator.pop(context);
     } catch (e) {
-      displaySnackBar(context, "Error : $e");
+      displaySnackBar(context, "Error: $e");
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+          progress = 0.0;
+        });
     }
   }
 
@@ -181,15 +272,20 @@ class _AddPostState extends State<AddPost> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        actionsPadding: EdgeInsets.only(right: 10),
         title: Text(
           'Create Post',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 20),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           MaterialButton(
             onPressed: _isLoading ? null : handleSubmit,
-            color: _isLoading ? Colors.grey : Theme.of(context).colorScheme.primary,
-            child: _isLoading ? LoadingScreen() : Text('Post', style: GoogleFonts.poppins(color: Colors.white)),
+            color: _isLoading
+                ? Colors.grey
+                : Theme.of(context).colorScheme.primary,
+            child: _isLoading
+                ? LoadingScreen()
+                : Text('Post', style: GoogleFonts.poppins(color: Colors.white)),
           ),
         ],
       ),
@@ -198,15 +294,18 @@ class _AddPostState extends State<AddPost> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
           child: Column(
             children: [
+              if (_isLoading && progress > 0)
+                LinearProgressIndicator(
+                  value: progress,
+                  color: Colors.grey,
+                  valueColor: AlwaysStoppedAnimation(Colors.lightBlueAccent),
+                ),
+
               _buildProfile(),
               const SizedBox(height: 10),
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                   child: quill.QuillEditor(
                     controller: _controller,
                     scrollController: _scrollController,
@@ -220,13 +319,113 @@ class _AddPostState extends State<AddPost> {
                 ),
               ),
               const SizedBox(height: 4),
-              if (file != null)
+              if (mediaFiles.length > 0)
                 Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  height: 200,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(File(file!.path), fit: BoxFit.cover),
+                  height: 100,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: mediaFiles.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final item = mediaFiles[index];
+                      final file = item["file"] as File;
+                      final type = item["type"];
+
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: type == "image"
+                                ? Image.file(
+                                    file,
+                                    width: 120,
+                                    height: 120,
+                                    fit: BoxFit.cover,
+                                  )
+                                : type == "video"
+                                ? GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => VideoPlayerScreen(
+                                            file: file,
+                                            isUrl: false,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: FutureBuilder<Uint8List?>(
+                                      future: getVideoThumbnail(file.path),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return Container(
+                                            width: 120,
+                                            height: 120,
+                                            color: Colors.black12,
+                                            child: const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
+                                          );
+                                        }
+                                        if (!snapshot.hasData) {
+                                          return Container(
+                                            width: 120,
+                                            height: 120,
+                                            color: Colors.black12,
+                                            child: const Icon(
+                                              Icons.videocam,
+                                              color: Colors.blue,
+                                            ),
+                                          );
+                                        }
+                                        return Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            Image.memory(
+                                              snapshot.data!,
+                                              width: 120,
+                                              height: 120,
+                                              fit: BoxFit.cover,
+                                            ),
+                                            const Icon(
+                                              Icons.play_circle_fill,
+                                              size: 40,
+                                              color: Colors.white,
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() => mediaFiles.removeAt(index));
+                              },
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black54,
+                                ),
+                                padding: const EdgeInsets.all(4),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               const SizedBox(height: 4),
@@ -261,24 +460,33 @@ class _AddPostState extends State<AddPost> {
               Wrap(
                 spacing: 8,
                 children: tags
-                    .map((tag) => Chip(
-                          label: Text(tag),
-                          onDeleted: () => setState(() => tags.remove(tag)),
-                        ))
+                    .map(
+                      (tag) => Chip(
+                        label: Text(tag),
+                        onDeleted: () => setState(() => tags.remove(tag)),
+                      ),
+                    )
                     .toList(),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   IconButton(
-                      icon: const Icon(Icons.photo, color: Colors.green),
-                      onPressed: () => pickImage(fromCamera: false)),
+                    icon: const Icon(Icons.photo, color: Colors.green),
+                    onPressed: () => pickImage(fromCamera: false),
+                  ),
                   IconButton(
-                      icon: const Icon(Icons.camera, color: Colors.red),
-                      onPressed: () => pickImage(fromCamera: true)),
+                    icon: const Icon(Icons.camera, color: Colors.red),
+                    onPressed: () => pickImage(fromCamera: true),
+                  ),
                   IconButton(
-                    icon: const Icon(Icons.videocam, color: Colors.lightBlueAccent),
-                    onPressed: followersNoti,
+                    icon: Icon(
+                      Icons.videocam,
+                      color: loadingVideo
+                          ? Colors.grey
+                          : Colors.lightBlueAccent,
+                    ),
+                    onPressed: () => loadingVideo ? null : pickVideo(),
                   ),
                 ],
               ),
@@ -301,16 +509,16 @@ class _AddPostState extends State<AddPost> {
     }
 
     return FutureBuilder(
-      future: UserServices().readUser(uid),
+      future: UserServices().readUser(AuthService().user!.uid),
       builder: (context, snap) {
-        if(!snap.hasData || snap.data == null){
+        if (!snap.hasData || snap.data == null) {
           return const Row(
-                  children: [
-                    CircleAvatar(radius: 25, child: Icon(Icons.person, size: 27)),
-                    SizedBox(width: 10),
-                    Text("Anonymous", style: TextStyle(fontSize: 18)),
-                  ],
-                );
+            children: [
+              CircleAvatar(radius: 25, child: Icon(Icons.person, size: 27)),
+              SizedBox(width: 10),
+              Text("Anonymous", style: TextStyle(fontSize: 18)),
+            ],
+          );
         }
         final _userData = snap.data;
         return Row(
@@ -327,11 +535,14 @@ class _AddPostState extends State<AddPost> {
             const SizedBox(width: 10),
             Text(
               userName ?? "Anonymous",
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w400, fontSize: 18),
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w400,
+                fontSize: 18,
+              ),
             ),
           ],
         );
-      }
+      },
     );
   }
 }

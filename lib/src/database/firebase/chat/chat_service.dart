@@ -117,6 +117,40 @@ class ChatService {
         );
   }
 
+  Stream<int> unreadMessagesCount(String uid) {
+    return _chatsCollection
+        .where('participants', arrayContains: uid)
+        .snapshots()
+        .asyncMap((snapshot) async {
+          int totalUnread = 0;
+
+          for (var chat in snapshot.docs) {
+            final messages = await chat.reference
+                .collection('messages')
+                .where('receiverId', isEqualTo: uid)
+                .where('read', isEqualTo: false)
+                .get();
+
+            totalUnread += messages.docs.length;
+          }
+
+          return totalUnread;
+        });
+  }
+
+  Future<void> markMessagesAsRead(String chatId, String uid) async {
+    final messagesRef = _chatsCollection.doc(chatId).collection('messages');
+
+    final unreadMessages = await messagesRef
+        .where('receiverId', isEqualTo: uid)
+        .where('read', isEqualTo: false)
+        .get();
+
+    for (var doc in unreadMessages.docs) {
+      await doc.reference.update({'read': true});
+    }
+  }
+
   /// Get or create chat between two users
   Future<DocumentReference<Map<String, dynamic>>> getOrCreateChat(
     String userId1,

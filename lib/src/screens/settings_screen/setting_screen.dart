@@ -134,33 +134,54 @@ class _SettingScreenState extends State<SettingScreen> {
               Align(
                 alignment: AlignmentDirectional.bottomCenter,
                 child: StreamBuilder(
-                  stream: UserServices().userStream(uid),
+                  stream: UserServices().userStream(AuthService().user!.uid),
                   builder: (context, async) {
-                    if(async.connectionState == ConnectionState.waiting){
-                      return Center(child: LoadingScreen(),);
+                    if (async.connectionState == ConnectionState.waiting) {
+                      return Center(child: LoadingScreen());
                     }
-                    if(!async.hasData || async.data == null){
+                    if (!async.hasData || async.data == null) {
                       return LogInScreen();
                     }
-                    if(isAnonymous){
-                      return ListTile(leading: DefaultCard(), title: Text("Anonymous"), trailing: IconButton(onPressed: () {
-                      showAccountManager();
-                    }, icon: Icon(Icons.arrow_drop_down_circle_outlined)),);
+                    if (isAnonymous) {
+                      return ListTile(
+                        leading: DefaultCard(),
+                        title: Text("Anonymous"),
+                        trailing: IconButton(
+                          onPressed: () {
+                            showAccountManager();
+                          },
+                          icon: Icon(Icons.arrow_drop_down_circle_outlined),
+                        ),
+                      );
                     }
                     final data = async.data;
-                    return ListTile(leading: CircleAvatar(backgroundImage: NetworkImage(data!['profilePic'])), title: Text("${data['name']}"), trailing: IconButton(onPressed: () {
-                      showAccountManager();
-                    }, icon: Icon(Icons.arrow_drop_up_outlined, size: 30,)),);
-                  }
+                    return ListTile(
+                      leading: data!.data()!.containsKey("profilePic")
+                          ? CircleAvatar(
+                              backgroundImage: NetworkImage(data['profilePic']),
+                            )
+                          : CircleAvatar(child: Icon(Icons.person)),
+                      title: data.data()!.containsKey("name")
+                          ? Text("${data['name']}")
+                          : Text("Error"),
+                      trailing: IconButton(
+                        onPressed: () {
+                          showAccountManager();
+                        },
+                        icon: Icon(Icons.arrow_drop_up_outlined, size: 30),
+                      ),
+                    );
+                  },
                 ),
-              )
+              ),
             ],
           ),
         ),
       ),
     );
   }
-  showGoals(){
+
+  showGoals() {
     return showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -170,28 +191,51 @@ class _SettingScreenState extends State<SettingScreen> {
             return;
           }
 
-          final postStream = PostServices().readYourPosts(uid);
-          final posts = await postStream.first; // get first snapshot from stream
+          final postStream = PostServices().readYourPosts(
+            AuthService().user!.uid,
+          );
+          final posts =
+              await postStream.first; // get first snapshot from stream
 
           // if posts are PostModal objects
-          final userPosts = posts.where((post) => post.userId == user!.uid).toList();
+          final userPosts = posts
+              .where((post) => post.userId == user!.uid)
+              .toList();
 
           print("User has ${userPosts.length} posts");
 
-          if(userPosts.length >= 10){
-            displayRoundedSnackBar(context, "Congratulations! You've reached 10 posts!");
-            UserServices().updateUser({'badges': FieldValue.arrayUnion(['10_posts'])});
+          if (userPosts.length >= 10) {
+            displayRoundedSnackBar(
+              context,
+              "Congratulations! You've reached 10 posts!",
+            );
+            UserServices().updateUser({
+              'badges': FieldValue.arrayUnion(['10_posts']),
+            });
           }
-          if(userPosts.length >= 50){
-            displayRoundedSnackBar(context, "Amazing! You've reached 100 posts!");
-            UserServices().updateUser({'badges': FieldValue.arrayUnion(['100_posts'])});
+          if (userPosts.length >= 50) {
+            displayRoundedSnackBar(
+              context,
+              "Amazing! You've reached 100 posts!",
+            );
+            UserServices().updateUser({
+              'badges': FieldValue.arrayUnion(['100_posts']),
+            });
           }
-          if(userPosts.length >= 100){
-            displayRoundedSnackBar(context, "Incredible! You've reached 100 followers!");
-            UserServices().updateUser({'badges': FieldValue.arrayUnion(['100_followers'])});
+          if (userPosts.length >= 100) {
+            displayRoundedSnackBar(
+              context,
+              "Incredible! You've reached 100 followers!",
+            );
+            UserServices().updateUser({
+              'badges': FieldValue.arrayUnion(['100_followers']),
+            });
           }
-          UserServices().updateUser({'badges': FieldValue.arrayUnion(['tester'])});
+          UserServices().updateUser({
+            'badges': FieldValue.arrayUnion(['tester']),
+          });
         }
+
         checkPosts();
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
@@ -206,18 +250,24 @@ class _SettingScreenState extends State<SettingScreen> {
               ListTile(
                 leading: Icon(Icons.star_border),
                 title: Text("Reach 10 posts"),
-                subtitle: Text("Keep posting and engaging with the community to reach this goal."),
+                subtitle: Text(
+                  "Keep posting and engaging with the community to reach this goal.",
+                ),
                 onTap: checkPosts,
               ),
               ListTile(
                 leading: Icon(Icons.star_half),
                 title: Text("Reach 100 posts"),
-                subtitle: Text("Stay active and contribute to the community to achieve this milestone."),
+                subtitle: Text(
+                  "Stay active and contribute to the community to achieve this milestone.",
+                ),
               ),
               ListTile(
                 leading: Icon(Icons.follow_the_signs),
                 title: Text("Reach 100 Followers"),
-                subtitle: Text("Become a top contributor by consistently sharing valuable content."),
+                subtitle: Text(
+                  "Become a top contributor by consistently sharing valuable content.",
+                ),
               ),
             ],
           ),
@@ -227,45 +277,50 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 
   showAccountManager() {
-  return showModalBottomSheet(
-    context: context,
-    builder: (context) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: CircleAvatar(
-                child: Icon(isAnonymous ? Icons.person_outline : Icons.person),
-              ),
-              title: Text(isAnonymous ? "Anonymous Account" : "Signed in as ${user?.email ?? user?.uid}"),
-            ),
-            const Divider(),
-            if (isAnonymous)
+    return showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               ListTile(
-                leading: const Icon(Icons.login),
-                title: const Text("Sign in with Account"),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, AppRouter.login);
-                },
-              )
-            else
-              ListTile(
-                leading: const Icon(Icons.person_off),
-                title: const Text("Switch to Anonymous"),
-                onTap: () async {
-                  await AuthService().signOut();
-                  await AuthService().signInAnonymous(context);
-                  Navigator.pop(context);
-                },
+                leading: CircleAvatar(
+                  child: Icon(
+                    isAnonymous ? Icons.person_outline : Icons.person,
+                  ),
+                ),
+                title: Text(
+                  isAnonymous
+                      ? "Anonymous Account"
+                      : "Signed in as ${user?.email ?? user?.uid}",
+                ),
               ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
+              const Divider(),
+              if (isAnonymous)
+                ListTile(
+                  leading: const Icon(Icons.login),
+                  title: const Text("Sign in with Account"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(context, AppRouter.login);
+                  },
+                )
+              else
+                ListTile(
+                  leading: const Icon(Icons.person_off),
+                  title: const Text("Switch to Anonymous"),
+                  onTap: () async {
+                    await AuthService().signOut();
+                    await AuthService().signInAnonymous(context);
+                    Navigator.pop(context);
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }

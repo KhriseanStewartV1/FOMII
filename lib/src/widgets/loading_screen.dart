@@ -11,7 +11,6 @@ class LoadingScreen extends StatelessWidget {
     return CircularProgressIndicator(
       backgroundColor: color,
       value: value,
-
     );
   }
 }

@@ -35,7 +35,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     if (_formKey.currentState!.validate() != false) {
       if (password == authpassword) {
-          print(name);
         try {
           final check = await AuthService().createUser(
             context,
@@ -98,11 +97,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
           final createUser = await UserServices().createUser(
             UserModal(
-              userId: user.uid,
-              name: user.displayName!,
+              userId: userCredential.user!.uid,
+              name: userCredential.user!.displayName!,
               profilePic: '',
               createdAt: DateTime.now(),
-              email: user.email,
+              email: userCredential.user!.email,
               bio: '',
               uniqueId: uniqueId,
             ),
@@ -151,6 +150,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     children: [
                       TextFormField(
                         controller: _name,
+                        keyboardType: TextInputType.name,
                         decoration: InputDecoration(
                           icon: Icon(Icons.person),
                           border: OutlineInputBorder(
@@ -161,6 +161,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       TextFormField(
                         controller: _email,
+                        keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           icon: Icon(Icons.email),
                           border: OutlineInputBorder(
@@ -171,6 +172,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       TextFormField(
                         controller: _password,
+                        keyboardType: TextInputType.visiblePassword,
                         decoration: InputDecoration(
                           icon: Icon(Icons.lock_outline_rounded),
                           suffixIcon: IconButton(
@@ -185,6 +187,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       TextFormField(
                         controller: _authpassword,
+                        keyboardType: TextInputType.visiblePassword,
                         decoration: InputDecoration(
                           icon: Icon(Icons.lock_outline_rounded),
                           suffixIcon: IconButton(

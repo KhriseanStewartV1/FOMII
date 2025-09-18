@@ -51,9 +51,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (notification != null) {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
-          'FOMII - The Blog', // channel id
+          'FOMII', // channel id
           'FOMII Notifications', // channel name
-          importance: Importance.high,
+          importance: Importance.defaultImportance,
           priority: Priority.high,
         );
 
@@ -89,7 +89,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FOMII - The Blog',
+      title: 'FOMII',
       theme: Provider.of<ThemeProvider>(context).themeData,
       routes: AppRouter.routes,
       initialRoute: AppRouter.splash,

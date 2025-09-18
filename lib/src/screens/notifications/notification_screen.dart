@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
+import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/modal/notifications_model.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -43,10 +43,7 @@ class NotificationScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           "Notifications",
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           IconButton(
@@ -60,17 +57,16 @@ class NotificationScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<List<NotificationModel>>(
-        stream: NotificationService().streamNotifications(uid),
+        stream: NotificationService().streamUserNotifications(
+          AuthService().user!.uid,
+        ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(
-              child: Text(
-                "No Notifications",
-                style: TextStyle(fontSize: 16),
-              ),
+              child: Text("No Notifications", style: TextStyle(fontSize: 16)),
             );
           }
 
@@ -82,7 +78,7 @@ class NotificationScreen extends StatelessWidget {
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final noti = notifications[index];
-          
+
               return Dismissible(
                 key: Key(noti.id),
                 background: Container(
@@ -99,7 +95,9 @@ class NotificationScreen extends StatelessWidget {
                   color: _getBackground(noti.isRead),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: noti.isRead ? Colors.grey[300] : Colors.blue,
+                      backgroundColor: noti.isRead
+                          ? Colors.grey[300]
+                          : Colors.blue,
                       child: Icon(
                         _getIcon(noti.type),
                         color: noti.isRead ? Colors.grey[600] : Colors.white,
@@ -109,7 +107,9 @@ class NotificationScreen extends StatelessWidget {
                     title: Text(
                       noti.title,
                       style: GoogleFonts.poppins(
-                        fontWeight: noti.isRead ? FontWeight.normal : FontWeight.bold,
+                        fontWeight: noti.isRead
+                            ? FontWeight.normal
+                            : FontWeight.bold,
                       ),
                     ),
                     subtitle: noti.body.isNotEmpty
@@ -122,7 +122,9 @@ class NotificationScreen extends StatelessWidget {
                         : null,
                     trailing: Text(
                       // ignore: unnecessary_null_comparison
-                      noti.dateTime != null ? _formatDate(noti.dateTime.toString()) : '',
+                      noti.dateTime != null
+                          ? _formatDate(noti.dateTime.toString())
+                          : '',
                       style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                     onTap: () async {

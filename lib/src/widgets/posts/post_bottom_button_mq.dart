@@ -26,11 +26,12 @@ class PostBottomButtonMq extends StatefulWidget {
   @override
   State<PostBottomButtonMq> createState() => _PostBottomButtonMqState();
 }
-    final _commentController = TextEditingController();
 
-class _PostBottomButtonMqState extends State<PostBottomButtonMq> with TickerProviderStateMixin{
+final _commentController = TextEditingController();
 
-   @override
+class _PostBottomButtonMqState extends State<PostBottomButtonMq>
+    with TickerProviderStateMixin {
+  @override
   void initState() {
     super.initState();
   }
@@ -45,7 +46,7 @@ class _PostBottomButtonMqState extends State<PostBottomButtonMq> with TickerProv
     final batchProvider = Provider.of<BatchPostProvider>(context);
     final posts = batchProvider.posts[widget.post.uuid];
     if (posts == null) {
-      return const SizedBox.shrink( );
+      return const SizedBox.shrink();
     }
     final uid = AuthService().user?.uid;
 
@@ -56,80 +57,188 @@ class _PostBottomButtonMqState extends State<PostBottomButtonMq> with TickerProv
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              backgroundColor: Colors.transparent,
-            ),
-            onPressed: () async {
-              Provider.of<BatchPostProvider>(
-                context,
-                listen: false,
-              ).toggleLike(widget.post.uuid, uid!, context);
-              String? deviceToken = await NotificationService().getToken(widget.post.userId);
-              if(deviceToken != null && isLiked != true){
-                await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "Liked", body: "Someone Liked your post!", context: context);
-              }
-            HapticFeedback.lightImpact();
-            },
-            child: _buildBottomPostOptions(
-              "${likesCount == 0 ? 'Like' : likesCount}",
-              Icon(
-                size: 24,
-                isLiked ? Icons.favorite :
-                Icons.favorite_outline,
-                color: isLiked
-                    ? hexToColor("#FF5252")
-                    : Theme.of(context).colorScheme.primary
+      child: StreamBuilder(
+        stream: PostServices().numberOfComments(posts.uuid),
+        builder: (context, snap) {
+          if (!snap.hasData) {
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    backgroundColor: Colors.transparent,
+                  ),
+                  onPressed: () async {
+                    Provider.of<BatchPostProvider>(
+                      context,
+                      listen: false,
+                    ).toggleLike(widget.post.uuid, uid!, context);
+                    String? deviceToken = await NotificationService().getToken(
+                      widget.post.userId,
+                    );
+                    if (deviceToken != null && isLiked != true) {
+                      await NotificationService.sendPushNotificationv2(
+                        deviceToken: deviceToken,
+                        title: "Liked",
+                        body: "Someone Liked your post!",
+                        context: context,
+                        receiverUid: widget.post.userId,
+                      );
+                    }
+                    HapticFeedback.lightImpact();
+                  },
+                  child: _buildBottomPostOptions(
+                    "${likesCount == 0 ? 'Like' : likesCount}",
+                    Icon(
+                      size: 24,
+                      isLiked ? Icons.favorite : Icons.favorite_outline,
+                      color: isLiked
+                          ? hexToColor("#FF5252")
+                          : Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    showCommentModal();
+                  },
+                  child: _buildBottomPostOptions(
+                    "",
+                    Icon(FeatherIcons.messageSquare, size: 24),
+                  ),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    backgroundColor: Colors.transparent,
+                  ),
+                  onPressed: () async {
+                    Provider.of<BatchPostProvider>(
+                      context,
+                      listen: false,
+                    ).toggleRepost(widget.post.uuid, uid!, context);
+                    String? deviceToken = await NotificationService().getToken(
+                      widget.post.userId,
+                    );
+                    if (deviceToken != null && !isReposted) {
+                      await NotificationService.sendPushNotificationv2(
+                        deviceToken: deviceToken,
+                        title: "Repost",
+                        body: "Someone Reposted your post!",
+                        context: context,
+                        receiverUid: widget.post.userId,
+                      );
+                    }
+                    HapticFeedback.lightImpact();
+                  },
+                  child: _buildBottomPostOptions(
+                    "${repostsCount == 0 ? 'Repost' : repostsCount}",
+                    Icon(
+                      FeatherIcons.repeat,
+                      size: 24,
+                      color: isReposted
+                          ? Colors.blue
+                          : Colors.lightBlueAccent.shade200,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+          final commentNum = snap.data?.docs;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  backgroundColor: Colors.transparent,
+                ),
+                onPressed: () async {
+                  Provider.of<BatchPostProvider>(
+                    context,
+                    listen: false,
+                  ).toggleLike(widget.post.uuid, uid!, context);
+                  String? deviceToken = await NotificationService().getToken(
+                    widget.post.userId,
+                  );
+                  if (deviceToken != null && isLiked != true) {
+                    await NotificationService.sendPushNotificationv2(
+                      deviceToken: deviceToken,
+                      title: "Liked",
+                      body: "Someone Liked your post!",
+                      context: context,
+                      receiverUid: widget.post.userId,
+                    );
+                  }
+                  HapticFeedback.lightImpact();
+                },
+                child: _buildBottomPostOptions(
+                  "${likesCount == 0 ? 'Like' : likesCount}",
+                  Icon(
+                    size: 24,
+                    isLiked ? Icons.favorite : Icons.favorite_outline,
+                    color: isLiked
+                        ? hexToColor("#FF5252")
+                        : Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              showCommentModal();
-            },
-            child: _buildBottomPostOptions(
-              "",
-              Icon(FeatherIcons.messageSquare, size: 24),
-            ),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              backgroundColor: Colors.transparent,
-            ),
-            onPressed: () async {
-              Provider.of<BatchPostProvider>(
-                context,
-                listen: false,
-              ).toggleRepost(widget.post.uuid, uid!, context);
-              String? deviceToken = await NotificationService().getToken(widget.post.userId);
-              if(deviceToken != null && !isReposted){
-                await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "Repost", body: "Someone Reposted your post!", context: context);
-              }
-              HapticFeedback.lightImpact();
-            },
-            child: _buildBottomPostOptions(
-              "${repostsCount == 0 ? 'Repost' : repostsCount}",
-              Icon(
-                FeatherIcons.repeat,
-                size: 24,
-                color: isReposted
-                    ? Colors.blue
-                    : Colors.lightBlueAccent.shade200
+              TextButton(
+                onPressed: () {
+                  showCommentModal();
+                },
+                child: _buildBottomPostOptions(
+                  "${commentNum?.length ?? ''}",
+                  Icon(FeatherIcons.messageSquare, size: 24),
+                ),
               ),
-            ),
-          ),
-        ],
+              TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  backgroundColor: Colors.transparent,
+                ),
+                onPressed: () async {
+                  Provider.of<BatchPostProvider>(
+                    context,
+                    listen: false,
+                  ).toggleRepost(widget.post.uuid, uid!, context);
+                  String? deviceToken = await NotificationService().getToken(
+                    widget.post.userId,
+                  );
+                  if (deviceToken != null && !isReposted) {
+                    await NotificationService.sendPushNotificationv2(
+                      deviceToken: deviceToken,
+                      title: "Repost",
+                      body: "Someone Reposted your post!",
+                      context: context,
+                      receiverUid: widget.post.userId,
+                    );
+                  }
+                  HapticFeedback.lightImpact();
+                },
+                child: _buildBottomPostOptions(
+                  "${repostsCount == 0 ? 'Repost' : repostsCount}",
+                  Icon(
+                    FeatherIcons.repeat,
+                    size: 24,
+                    color: isReposted
+                        ? Colors.blue
+                        : Colors.lightBlueAccent.shade200,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-    Widget _buildBottomPostOptions(String text, Widget icon) {
+  Widget _buildBottomPostOptions(String text, Widget icon) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -148,7 +257,7 @@ class _PostBottomButtonMqState extends State<PostBottomButtonMq> with TickerProv
     );
   }
 
-    Widget _buildCommentStream() {
+  Widget _buildCommentStream() {
     return StreamBuilder(
       stream: PostServices().readComments(widget.post.uuid),
       builder: (context, snapshot) {
@@ -206,7 +315,7 @@ class _PostBottomButtonMqState extends State<PostBottomButtonMq> with TickerProv
                   ],
                 ),
                 SizedBox(height: 4),
-               Text(
+                Text(
                   comment, // Replace with actual message
                   style: GoogleFonts.poppins(
                     fontSize: 15,
@@ -228,7 +337,7 @@ class _PostBottomButtonMqState extends State<PostBottomButtonMq> with TickerProv
     );
   }
 
-    String getFormattedDate(Timestamp timestamp) {
+  String getFormattedDate(Timestamp timestamp) {
     final dateTime = timestamp.toDate();
     final formatter = DateFormat('MMM dd, yyyy');
     return formatter.format(dateTime);
@@ -285,10 +394,10 @@ class _PostBottomButtonMqState extends State<PostBottomButtonMq> with TickerProv
     );
   }
 
-    void userComment() async {
+  void userComment() async {
     final commentText = _commentController.text.trim();
     if (commentText.isEmpty) return;
-    final userData = await UserServices().readUser(uid);
+    final userData = await UserServices().readUser(AuthService().user!.uid);
     final autherData = await UserServices().readUser(widget.post.userId);
     final deviceToken = autherData!['token'];
     if (userData == null) return; // handle error if needed
@@ -296,13 +405,19 @@ class _PostBottomButtonMqState extends State<PostBottomButtonMq> with TickerProv
 
     await PostServices().addComment(
       commentText,
-      uid,
+      AuthService().user!.uid,
       userData['profilePic'],
       DateTime.now(),
       userData['name'],
       widget.post.uuid,
     );
-    await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "${userData['name']} left a comment", body: commentText, context: context);
-  HapticFeedback.mediumImpact();
+    await NotificationService.sendPushNotificationv2(
+      deviceToken: deviceToken,
+      title: "${userData['name']} left a comment",
+      body: commentText,
+      context: context,
+      receiverUid: widget.post.userId,
+    );
+    HapticFeedback.mediumImpact();
   }
 }

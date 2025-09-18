@@ -3,9 +3,9 @@ import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/database/forum/forum_service.dart';
 import 'package:fomo_connect/src/modal/forum_modal.dart';
+import 'package:fomo_connect/src/widgets/default_card.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
-import 'package:fomo_connect/src/widgets/profile_pic.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 
@@ -149,7 +149,7 @@ class _ForumScreenState extends State<ForumScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(spacing: 8, children: [ProfilePic(), Text(forum.name, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),)],),
+                                  Row(spacing: 8, children: [DefaultCard(), Text(forum.name, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),)],),
                                   Text(timeAgo(forum.createdAt), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w300))
                                 ],
                               ),

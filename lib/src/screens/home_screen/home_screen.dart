@@ -9,7 +9,8 @@ import 'package:fomo_connect/src/database/firebase/notifications/notification_se
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/provider/post_provider.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
-import 'package:fomo_connect/src/screens/notifications/notification_screen.dart';
+import 'package:fomo_connect/src/widgets/floating_action_btn_custom.dart';
+import 'package:fomo_connect/src/widgets/icon_badge.dart';
 import 'package:fomo_connect/src/widgets/posts/post_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -28,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   TextEditingController searchController = TextEditingController();
   List<PostModal> filteredPost = [];
 
-  final List<PostModal> _posts = [];
+  // final List<PostModal> _posts = [];
   bool _loadingMore = false; // to prevent multiple fetches
   DocumentSnapshot? _lastDoc; // last doc for pagination
   final ScrollController _scrollController = ScrollController();
@@ -58,7 +59,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() => _loadingMore = true);
 
-    final batchProvider = Provider.of<BatchPostProvider>(context, listen: false);
+    final batchProvider = Provider.of<BatchPostProvider>(
+      context,
+      listen: false,
+    );
     final currentPosts = batchProvider.posts.values.toList();
 
     // Determine the last document from Firestore
@@ -93,16 +97,17 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _loadingMore = false);
   }
 
-
   @override
   void initState() {
     super.initState();
     _getDeviceToken();
-    final batchProvider = Provider.of<BatchPostProvider>(context, listen: false);
+    final batchProvider = Provider.of<BatchPostProvider>(
+      context,
+      listen: false,
+    );
     BatchPostServices().readLatestPosts(limit: 10).listen((batch) {
       if (batch.isNotEmpty) {
-
-      batchProvider.setPosts(batch);
+        batchProvider.setPosts(batch);
       }
     });
 
@@ -124,97 +129,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(AuthService().user!.emailVerified);
     return Scaffold(
-      appBar: AppBar(
-        actionsPadding: EdgeInsets.symmetric(horizontal: 8),
-        elevation: 0,
-        leading: AspectRatio(aspectRatio: 1, child: Image.asset('assets/fomo-bgremove.png')),
-        title: _buildToggle(),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NotificationScreen()),
-              );
-            },
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.lightBlueAccent,
-              foregroundColor: Colors.white,
-            ),
-            icon: Icon(FeatherIcons.bell),
-          ),
-        ],
-      ),
+      appBar: _buildAppBar(context),
       body: Consumer<BatchPostProvider>(
-      builder: (context, batchProvider, _) {
-        final posts = batchProvider.posts.values.toList();
-        if (posts.isEmpty) return Center(child: CircularProgressIndicator());
+        builder: (context, batchProvider, _) {
+          final posts = batchProvider.posts.values.toList();
+          if (posts.isEmpty) return Center(child: CircularProgressIndicator());
 
-        return RefreshIndicator(
-          onRefresh: () async {
-            posts.shuffle();
-            batchProvider.setPosts(posts);
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: selectedTab == 0 ? Column(
-              children: [
-                TextFormField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 0,
-                      horizontal: 10,
-                    ),
-                    hint: Text(
-                      "Search...",
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 14,
+          return RefreshIndicator(
+            onRefresh: () async {
+              // posts.shuffle();
+              batchProvider.setPosts(posts);
+            },
+            child: selectedTab == 0
+                ? Column(
+                    children: [
+                      Expanded(
+                        child: searchController.text.isNotEmpty
+                            ? _buildStreamPosts(filteredPost)
+                            : _buildStreamPosts(posts),
                       ),
-                    ),
-                    border: InputBorder.none
-                  ),
-                  onChanged: (query) {
-                    final postProvider = Provider.of<BatchPostProvider>(
-                      context,
-                      listen: false,
-                    );
-                    final allPosts = postProvider.posts.values.toList();
-    
-                    setState(() {
-                      if (query.isEmpty) {
-                        filteredPost = allPosts; // reset to all
-                      } else {
-                        final lowerQuery = query.toLowerCase();
-    
-                        filteredPost = allPosts.where((p) {
-                          final matchesText = p.richText.where( (element) {
-                            if (element.containsKey('insert')) {
-                              final insert = element['insert'];
-                                if (insert is String) {
-                                  return insert.toLowerCase().contains(lowerQuery);
-                                }
-                            }
-                            return false;
-                          }).isNotEmpty;
-                            final matchesUser = p.userName.toLowerCase().contains(lowerQuery);
-                            final matchesHashtag = p.tags.any(
-                              (tag) => tag.toLowerCase().contains(lowerQuery),
-                            );
-    
-                            return matchesText || matchesUser || matchesHashtag;
-                        }).toList();
-                      }
-                    });
-                  },
-                ),
-                const SizedBox(height: 10,),
-                Expanded(child: searchController.text.isNotEmpty ? _buildStreamPosts(filteredPost) : _buildStreamPosts(posts)),
-              ],
-            ) : StreamBuilder(
+                    ],
+                  )
+                : StreamBuilder(
                     stream: PostServices().getFollowingPosts(uid),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData || snapshot.data == null) {
@@ -227,17 +164,31 @@ class _HomeScreenState extends State<HomeScreen> {
                       return _buildStreamPosts(data);
                     },
                   ),
-          ),
-        );
-      }
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).colorScheme.secondary,
-        shape: CircleBorder(),
-        onPressed: () {
-          Navigator.pushNamed(context, AppRouter.addPost);
+          );
         },
-        child: Icon(Icons.add),
+      ),
+      floatingActionButton: ExpandableFab(),
+    );
+  }
+
+  PreferredSize _buildAppBar(BuildContext context) {
+    return PreferredSize(
+      preferredSize: Size.fromHeight(kToolbarHeight),
+      child: ListTile(
+        leading: Text(
+          "FOMII",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        title: _buildToggle(),
+        trailing: IconBadge(
+          stream: NotificationService().streamUserNotifications(
+            AuthService().user!.uid,
+          ),
+          icon: Icon(FeatherIcons.bell),
+          onpress: () {
+            Navigator.pushNamed(context, AppRouter.notifications);
+          },
+        ),
       ),
     );
   }
@@ -257,63 +208,14 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
             child: Stack(
               children: [
-                if (selectedTab == 0) Column(
-                  children: [
-                      TextFormField(
-                              controller: searchController,
-                        onChanged: (query) {
-                          final postProvider = Provider.of<PostProvider>(
-                            context,
-                            listen: false,
-                          );
-                          final allPosts = postProvider.posts.values.toList();
-    
-                          setState(() {
-                            if (query.isEmpty) {
-                              filteredPost = allPosts; // reset to all
-                            } else {
-                              final lowerQuery = query.toLowerCase();
-    
-                              filteredPost = allPosts.where((p) {
-                                final matchesText = p.richText.where( (element) {
-                                  if (element.containsKey('insert')) {
-                                    final insert = element['insert'];
-                                    if (insert is String) {
-                                      return insert.toLowerCase().contains(lowerQuery);
-                                    }
-                                  }
-                                  return false;
-                                }).isNotEmpty;
-                                final matchesUser = p.userName.toLowerCase().contains(lowerQuery);
-                                final matchesHashtag = p.tags.any(
-                                  (tag) => tag.toLowerCase().contains(lowerQuery),
-                                );
-    
-                                return matchesText || matchesUser || matchesHashtag;
-                              }).toList();
-                            }
-                          });
-                        },
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 0,
-                            horizontal: 10,
-                          ),
-                          hint: Text(
-                            "Search...",
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w400,
-                              fontSize: 14,
-                            ),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    Expanded(child: searchController.text.isNotEmpty ? _buildStreamPosts(filteredPost) : _buildStreamPosts(posts)),
-                  ],
-                ),
+                if (selectedTab == 0)
+                  Column(
+                    children: [
+                      searchController.text.isNotEmpty
+                          ? _buildStreamPosts(filteredPost)
+                          : _buildStreamPosts(posts),
+                    ],
+                  ),
                 if (selectedTab == 1)
                   StreamBuilder(
                     stream: PostServices().getFollowingPosts(uid),
@@ -337,17 +239,83 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStreamPosts(List<PostModal> data) {
-    return ListView.separated(
-      separatorBuilder: (context, index) => Divider(),
-      itemCount: data.length,
-      padding: const EdgeInsets.only(top: 10),
-      itemBuilder: (context, index) {
-        final PostModal post = data[index];
-        return AnimatedSwitcher(
-          duration: Duration(milliseconds: 1),
-          child: PostWidget(post: post),
-        );
-      },
+    return CustomScrollView(
+      slivers: [
+        // Sliver for RecentEvents (stories)
+        SliverToBoxAdapter(
+          child: TextFormField(
+            controller: searchController,
+            decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 0,
+                horizontal: 10,
+              ),
+              hint: Text(
+                "Search...",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14,
+                ),
+              ),
+              border: InputBorder.none,
+            ),
+            onChanged: (query) {
+              final postProvider = Provider.of<BatchPostProvider>(
+                context,
+                listen: false,
+              );
+              final allPosts = postProvider.posts.values.toList();
+
+              setState(() {
+                if (query.isEmpty) {
+                  filteredPost = allPosts; // reset to all
+                } else {
+                  final lowerQuery = query.toLowerCase();
+
+                  filteredPost = allPosts.where((p) {
+                    final matchesText = p.richText.where((element) {
+                      if (element.containsKey('insert')) {
+                        final insert = element['insert'];
+                        if (insert is String) {
+                          return insert.toLowerCase().contains(lowerQuery);
+                        }
+                      }
+                      return false;
+                    }).isNotEmpty;
+                    final matchesUser = p.userName.toLowerCase().contains(
+                      lowerQuery,
+                    );
+                    final matchesHashtag = p.tags.any(
+                      (tag) => tag.toLowerCase().contains(lowerQuery),
+                    );
+
+                    return matchesText || matchesUser || matchesHashtag;
+                  }).toList();
+                }
+              });
+            },
+          ),
+        ),
+
+        SliverToBoxAdapter(child: const SizedBox(height: 4)),
+
+        // SliverToBoxAdapter(child: const RecentEvents()),
+
+        // SliverToBoxAdapter(child: const SizedBox(height: 4)),
+
+        // Sliver for posts
+        SliverList.separated(
+          itemCount: data.length,
+          separatorBuilder: (context, index) => const Divider(),
+          itemBuilder: (context, index) {
+            final PostModal post = data[index];
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 1),
+              child: PostWidget(post: post),
+            );
+          },
+        ),
+      ],
     );
   }
 

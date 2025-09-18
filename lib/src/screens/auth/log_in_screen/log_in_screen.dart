@@ -22,7 +22,7 @@ class _LogInScreenState extends State<LogInScreen> {
   final _password = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
-  bool showPassword = false;
+  bool showPassword = true;
   bool _rememberMe = false;
 
   @override
@@ -51,7 +51,7 @@ class _LogInScreenState extends State<LogInScreen> {
     });
     if (_formKey.currentState?.validate() != false) {
       try {
-        final check = await AuthService().readUser(context, email, password);
+        final check = await AuthService().loginUser(context, email, password);
         if (check != null) {
           if (_rememberMe) {
             await prefs.setBool('remember_me', true);
@@ -60,11 +60,10 @@ class _LogInScreenState extends State<LogInScreen> {
             await prefs.remove('remember_me');
             await prefs.remove('email');
           }
-            print("Hey");
-            Navigator.pushReplacementNamed(context, AppRouter.authWrapper);
+          Navigator.pushReplacementNamed(context, AppRouter.authWrapper);
         }
       } catch (e) {
-        displaySnackBar(context, "Error: $e");
+        displaySnackBar(context, "Error: ${e}");
         setState(() {
           _loading = false;
         });
@@ -158,10 +157,12 @@ class _LogInScreenState extends State<LogInScreen> {
                           ),
                           labelText: 'Enter Your Email',
                         ),
+                        keyboardType: TextInputType.emailAddress,
                       ),
                       TextFormField(
                         controller: _password,
                         obscureText: showPassword,
+                        keyboardType: TextInputType.visiblePassword,
                         decoration: InputDecoration(
                           icon: Icon(Icons.lock_outline_rounded),
                           suffixIcon: IconButton(

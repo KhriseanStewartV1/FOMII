@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -19,6 +18,7 @@ import 'package:fomo_connect/src/widgets/default_card.dart';
 import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/mention_text_field.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
+import 'package:fomo_connect/src/widgets/posts/carousel_slider_widget.dart';
 import 'package:fomo_connect/src/widgets/posts/post_bottom_button_mq.dart';
 import 'package:fomo_connect/src/widgets/posts/post_bottom_buttons.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -34,25 +34,9 @@ class PostWidget extends StatefulWidget {
   State<PostWidget> createState() => _PostWidgetState();
 }
 
-
-
 String uid = FirebaseAuth.instance.currentUser!.uid;
 final _commentController = TextEditingController();
 final Map<String, DocumentSnapshot> _profileCache = {};
-
-
-Future<ui.Image> _getImageSize(String url) async {
-  final completer = Completer<ui.Image>();
-  final image = NetworkImage(url);
-  image
-      .resolve(const ImageConfiguration())
-      .addListener(
-        ImageStreamListener((ImageInfo info, bool _) {
-          completer.complete(info.image);
-        }),
-      );
-  return completer.future;
-}
 
 Future<DocumentSnapshot?> _getProfile(String userId) async {
   if (_profileCache.containsKey(userId)) {
@@ -81,45 +65,50 @@ class _PostWidgetState extends State<PostWidget> {
       userData['name'],
       widget.post.uuid,
     );
-    await NotificationService.sendPushNotificationv2(deviceToken: userData['token'], title: "${userData['name']} left a comment", body: commentText, context: context);
-  HapticFeedback.lightImpact();
+    await NotificationService.sendPushNotificationv2(
+      deviceToken: userData['token'],
+      title: "${userData['name']} left a comment",
+      body: commentText,
+      context: context,
+      receiverUid: widget.post.userId,
+    );
+    HapticFeedback.lightImpact();
     _commentController.clear(); // Clear input after sending
     setState(() {}); // Optional, refresh UI if needed
   }
 
-  bool  isAnonymous = AuthService().user!.isAnonymous;
-  
-  
+  bool isAnonymous = AuthService().user!.isAnonymous;
+
   @override
   Widget build(BuildContext context) {
     final document = (widget.post.richText.isNotEmpty)
-    ? quill.Document.fromJson(widget.post.richText)
-    : quill.Document();
+        ? quill.Document.fromJson(widget.post.richText)
+        : quill.Document();
     final controller = quill.QuillController(
       document: document,
       selection: const TextSelection.collapsed(offset: 0),
     );
     SizeConfig.init(context);
+    controller.readOnly = true;
     final size = MediaQuery.of(context).size;
     return Container(
       margin: const EdgeInsets.only(bottom: 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          isAnonymous ? _buildAnonymousProfile(widget.post) :
-          _buildPostProfileText(widget.post),
+          isAnonymous
+              ? _buildAnonymousProfile(widget.post)
+              : _buildPostProfileText(widget.post),
           SizedBox(height: 8),
-          if (widget.post.imageUrl != null) _buildImageRatio(widget.post),
+          if (widget.post.media.isNotEmpty) buildMedia(widget.post),
           SizedBox(height: 8),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8),
-            child: quill.QuillEditor(
+            child: quill.QuillEditor.basic(
               controller: controller,
               scrollController: ScrollController(),
               focusNode: FocusNode(),
-              config: quill.QuillEditorConfig(
-                
-              ),
+              config: quill.QuillEditorConfig(checkBoxReadOnly: true),
             ),
           ),
           if (size.width < 361)
@@ -131,70 +120,6 @@ class _PostWidgetState extends State<PostWidget> {
     );
   }
 
-  Widget _buildImageRatio(PostModal post) {
-    return FutureBuilder(
-      future: _getImageSize(post.imageUrl!),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Image.network(post.imageUrl!, fit: BoxFit.contain);
-        }
-        if (!snapshot.hasData) {
-          return SizedBox.shrink();
-        }
-        final imageInfo = snapshot.data!;
-        final aspectRatio = imageInfo.width / imageInfo.height;
-
-        return GestureDetector(
-          onTap: () {
-            _openFullScreenImage(context, post.imageUrl!);
-          },
-          child: AspectRatio(
-            aspectRatio: aspectRatio,
-            child: CachedNetworkImage(
-              imageUrl: post.imageUrl!,
-              fit: BoxFit.contain,
-              memCacheHeight: imageInfo.height,
-              memCacheWidth: imageInfo.width,
-              progressIndicatorBuilder: (context, url, downloadProgress) =>
-                  Center(
-                    child: CircularProgressIndicator(
-                      value: downloadProgress.progress,
-                    ),
-                  ),
-              errorWidget: (context, url, error) =>
-                  Center(child: Icon(Icons.error)),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _openFullScreenImage(BuildContext context, String imageUrl) {
-    showDialog(
-      context: context,
-      builder: (context) => GestureDetector(
-        onTap: () => Navigator.of(context).pop(), // tap to close
-        child: Container(
-          color: Colors.black.withOpacity(0.4),
-          alignment: Alignment.center,
-          child: Hero(
-            tag:
-                imageUrl, // optional: for smooth transition if using Hero elsewhere
-            child: InteractiveViewer(
-              panEnabled: true,
-              minScale: 0.5,
-              maxScale: 4.0,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   showCommentModal() {
     return showModalBottomSheet(
@@ -339,50 +264,50 @@ class _PostWidgetState extends State<PostWidget> {
 
   Widget _buildAnonymousProfile(PostModal post) {
     return Column(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                spacing: 20,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        height: 48,
-                        width: 48,
-                        child: isAnonymous ? CircleAvatar(child: Icon(Icons.person),) : CircleAvatar(
-                          backgroundImage: NetworkImage(post.imageUrl!),
-                        )
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          spacing: 20,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 48,
+                  width: 48,
+                  child: isAnonymous
+                      ? CircleAvatar(child: Icon(Icons.person))
+                      : null,
+                ),
+                SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      post.userName,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
-                      SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 4,
-                        children: [
-                          Text(
-                            post.userName,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            getRelativeTime(post.timestamp),
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
-                        ],
+                    ),
+                    Text(
+                      getRelativeTime(post.timestamp),
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w300,
                       ),
-                    ],
-                  ),
-                ],
-              ),
-              // SizedBox(height: 5),
-            ],
-          );
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+        // SizedBox(height: 5),
+      ],
+    );
   }
 
   Widget _buildPostProfileText(PostModal post) {
@@ -439,7 +364,7 @@ class _PostWidgetState extends State<PostWidget> {
           );
         }
         final data = snapshot.data;
-        if(!data!.exists){
+        if (!data!.exists) {
           return Column(
             children: [
               Row(
@@ -568,9 +493,17 @@ class _PostWidgetState extends State<PostWidget> {
                             post.userId,
                             isFollowing,
                           );
-                          String? deviceToken = await NotificationService().getToken(post.userId);
-                          if(deviceToken != null && isFollowing){
-                            await NotificationService.sendPushNotificationv2(deviceToken: deviceToken, title: "New Follower", body: "${AuthService().user!.displayName} Followed you", context: context);
+                          String? deviceToken = await NotificationService()
+                              .getToken(post.userId);
+                          if (deviceToken != null && isFollowing) {
+                            await NotificationService.sendPushNotificationv2(
+                              deviceToken: deviceToken,
+                              title: "New Follower",
+                              body:
+                                  "${AuthService().user!.displayName} Followed you",
+                              context: context,
+                              receiverUid: widget.post.userId,
+                            );
                           }
                           setState(() {
                             followMessage = message;
