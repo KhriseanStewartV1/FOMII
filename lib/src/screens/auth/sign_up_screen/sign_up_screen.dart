@@ -7,7 +7,7 @@ import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/modal/user_modal.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
+import 'package:icons_plus/icons_plus.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -23,6 +23,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _name = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
+  bool read = true;
 
   handleSubmit() async {
     final email = _email.text.trim();
@@ -56,6 +57,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               email: email,
               bio: '',
               uniqueId: uniqueId,
+              terms: read
             ),
           );
 
@@ -139,9 +141,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 //SVG
-                Expanded(
-                  child: Lottie.asset('assets/lottie/login.json', repeat: true),
-                ),
+                Expanded(child: Image.asset("assets/fomo.png")),
                 SizedBox(height: 30),
                 Form(
                   key: _formKey,
@@ -153,9 +153,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         keyboardType: TextInputType.name,
                         decoration: InputDecoration(
                           icon: Icon(Icons.person),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
+                          border: InputBorder.none,
                           labelText: 'Enter Username',
                         ),
                       ),
@@ -164,9 +162,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           icon: Icon(Icons.email),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
+                          border: InputBorder.none,
                           labelText: 'Enter Your Email',
                         ),
                       ),
@@ -179,9 +175,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             onPressed: () {},
                             icon: Icon(Icons.visibility),
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
+                          border: InputBorder.none,
                           labelText: 'Password',
                         ),
                       ),
@@ -194,14 +188,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             onPressed: () {},
                             icon: Icon(Icons.visibility),
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
+                          border: InputBorder.none,
                           labelText: 'Confirm Password',
                         ),
                       ),
                     ],
                   ),
+                ),
+                SizedBox(height: 10),
+                Row(
+                  spacing: 2,
+                  children: [
+                    Checkbox(
+                      value: read,
+                      onChanged: (value) {
+                        setState(() {
+                          read = !read;
+                        });
+                      },
+                    ),
+                    GestureDetector(
+                      onTap: () {},
+                      child: Text("I agree to the Terms and Conditions"),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 20),
                 SizedBox(
@@ -214,7 +224,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    onPressed: _loading ? null : handleSubmit,
+                    onPressed: _loading
+                        ? null
+                        : read
+                        ? handleSubmit
+                        : null,
                     child: Text(
                       "Sign up",
                       style: GoogleFonts.poppins(
@@ -231,21 +245,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
+                      backgroundColor: read
+                          ? Colors.grey.shade500
+                          : Colors.white,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
                     onPressed: () async {
-                      _loading ? null : googleSignIn();
+                      _loading
+                          ? null
+                          : read
+                          ? googleSignIn()
+                          : null;
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 20,
                       children: [
+                        Icon(Bootstrap.google, size: 23),
                         Text(
                           "Google",
                           style: GoogleFonts.poppins(
-                            color: Colors.black,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),

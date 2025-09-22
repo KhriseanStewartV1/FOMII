@@ -7,7 +7,7 @@ import 'package:fomo_connect/src/database/firebase/chat/chat_service.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/screens/inbox_screen/chat_screen.dart';
 import 'package:fomo_connect/src/widgets/contact_list.dart';
-import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/screens/loading_splash.dart/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_fonts/google_fonts.dart';
 

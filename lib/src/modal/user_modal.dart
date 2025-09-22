@@ -11,6 +11,7 @@ class UserModal {
   final List<String>? followers; // List of user IDs
   final List<String>? following; // List of user IDs
   final String? uniqueId;
+  final bool? terms;
 
   UserModal({
     required this.userId,
@@ -25,6 +26,7 @@ class UserModal {
     this.followers,
     this.following,
     this.uniqueId,
+    this.terms
   });
 
   // Convert to Map for Firebase storage
@@ -34,6 +36,7 @@ class UserModal {
       'name': name,
       'profilePic': profilePic,
       'createdAt': createdAt.toIso8601String(),
+      'terms' : terms,
       if (bio != null) 'bio': bio,
       if (email != null) 'email': email,
       if (followersCount != null) 'followersCount': followersCount,
@@ -41,7 +44,7 @@ class UserModal {
       if (isVerified != null) 'isVerified': isVerified,
       'followers': followers ?? [],
       'following': following ?? [],
-      if(uniqueId != null)'uniqueId' : uniqueId
+      if (uniqueId != null) 'uniqueId': uniqueId,
     };
   }
 
@@ -59,7 +62,8 @@ class UserModal {
       isVerified: map['isVerified'],
       followers: List<String>.from(map['followers'] ?? []),
       following: List<String>.from(map['following'] ?? []),
-      uniqueId: map['uniqueId']
+      uniqueId: map['uniqueId'],
+      terms: map['terms']
     );
   }
 }

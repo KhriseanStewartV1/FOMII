@@ -10,8 +10,8 @@ import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/database/others/image.dart';
 import 'package:fomo_connect/src/database/storage/image.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
-import 'package:fomo_connect/src/widgets/beta_tester.dart';
-import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/widgets/badges/badges_widget.dart';
+import 'package:fomo_connect/src/screens/loading_splash.dart/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:fomo_connect/src/widgets/posts/post_widget_profile.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -32,6 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool posts1 = false;
   bool posts2 = false;
   bool followers1 = false;
+  bool verified = false;
   XFile? file;
   String following = '0';
   String followers = '0';
@@ -79,6 +80,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             case "100_followers":
               setState(() {
                 followers1 = true;
+              });
+              break;
+            case "verified":
+              setState(() {
+                verified = true;
               });
               break;
             default:
@@ -154,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await UserServices().updateUser(dataToUpdate);
       Navigator.pop(context);
       if (mounted) {
-        displayRoundedSnackBar(context, "Reload the Page");
+        displayRoundedSnackBar(context, "Updated!");
       }
     } else {
       displayRoundedSnackBar(context, "An error occurred");
@@ -577,8 +583,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileHeader(String userName) {
-    return FutureBuilder(
-      future: UserServices().readUser(uid),
+    return StreamBuilder(
+      stream: UserServices().userStream(uid),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return Center(child: LoadingScreen());
@@ -631,7 +637,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       ),
-                      tester ? BetaTesterBadge() : SizedBox.shrink(),
+                      BadgesWidget(verified: verified, betaTester: tester, tenPost: posts1,)
                     ],
                   ),
                   Row(

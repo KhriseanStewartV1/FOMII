@@ -12,6 +12,7 @@ import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/widgets/floating_action_btn_custom.dart';
 import 'package:fomo_connect/src/widgets/icon_badge.dart';
 import 'package:fomo_connect/src/widgets/posts/post_widget.dart';
+import 'package:fomo_connect/src/widgets/recent_events.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -135,10 +136,8 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context, batchProvider, _) {
           final posts = batchProvider.posts.values.toList();
           if (posts.isEmpty) return Center(child: CircularProgressIndicator());
-
           return RefreshIndicator(
             onRefresh: () async {
-              // posts.shuffle();
               batchProvider.setPosts(posts);
             },
             child: selectedTab == 0
@@ -174,20 +173,35 @@ class _HomeScreenState extends State<HomeScreen> {
   PreferredSize _buildAppBar(BuildContext context) {
     return PreferredSize(
       preferredSize: Size.fromHeight(kToolbarHeight),
-      child: ListTile(
-        leading: Text(
-          "FOMII",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        title: _buildToggle(),
-        trailing: IconBadge(
-          stream: NotificationService().streamUserNotifications(
-            AuthService().user!.uid,
+      child: SafeArea(
+        child: Container(
+          height: kToolbarHeight,
+          alignment: Alignment.center, // vertical center
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment:
+                CrossAxisAlignment.center, // ensure vertical centering
+            children: [
+              Text(
+                "FOMII",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              _buildToggle(),
+              IconBadge(
+                stream: NotificationService().streamUserNotifications(
+                  AuthService().user!.uid,
+                ),
+                icon: Icon(FeatherIcons.bell),
+                onpress: () {
+                  Navigator.pushNamed(context, AppRouter.notifications);
+                },
+              ),
+            ],
           ),
-          icon: Icon(FeatherIcons.bell),
-          onpress: () {
-            Navigator.pushNamed(context, AppRouter.notifications);
-          },
         ),
       ),
     );
@@ -240,6 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildStreamPosts(List<PostModal> data) {
     return CustomScrollView(
+      controller: _scrollController,
       slivers: [
         // Sliver for RecentEvents (stories)
         SliverToBoxAdapter(
@@ -299,9 +314,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
         SliverToBoxAdapter(child: const SizedBox(height: 4)),
 
-        // SliverToBoxAdapter(child: const RecentEvents()),
+        SliverToBoxAdapter(child: const RecentEvents()),
 
-        // SliverToBoxAdapter(child: const SizedBox(height: 4)),
+        SliverToBoxAdapter(child: const SizedBox(height: 4)),
 
         // Sliver for posts
         SliverList.separated(
@@ -314,6 +329,14 @@ class _HomeScreenState extends State<HomeScreen> {
               child: PostWidget(post: post),
             );
           },
+        ),
+        SliverToBoxAdapter(
+          child: _loadingMore
+              ? Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : SizedBox.shrink(),
         ),
       ],
     );

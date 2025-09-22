@@ -11,8 +11,21 @@ class PostServices {
       await _db.doc(uuid).set(post.toMap());
       return true;
     } catch (e) {
-      print(e);
+      print("Error Posting $e");
       return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> getPosts(String uuid) async {
+    final docSnapshot = await _db.doc(uuid).get();
+    return docSnapshot.data() ?? {};
+  }
+
+  Future<void> updatePost(Map<String, dynamic> map, String uuid) async {
+    try {
+      await _db.doc(uuid).set({'event': map}, SetOptions(merge: true));
+    } catch (e) {
+      print(e);
     }
   }
 
@@ -72,8 +85,8 @@ class PostServices {
       print(e);
     }
   }
-  
-  Stream<QuerySnapshot<Map<String, dynamic>>> numberOfComments (String postId) {
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> numberOfComments(String postId) {
     return _db.doc(postId).collection("comments").snapshots();
   }
 
@@ -166,22 +179,33 @@ class PostServices {
   }
 }
 
-class BatchPostServices{
+class BatchPostServices {
   final _db = _instance.collection("posts");
-  Stream<List<PostModal>> readLatestPosts({int limit = 10}){
+  Stream<List<PostModal>> readLatestPosts({int limit = 10}) {
     return _db
-    .orderBy("timestamp", descending: true)
-    .limit(limit)
-    .snapshots()
-    .map((snap) =>
-            snap.docs.map((doc) => PostModal.fromFirestore(doc.data())).toList());
+        .orderBy("timestamp", descending: true)
+        .limit(limit)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => PostModal.fromFirestore(doc.data()))
+              .toList(),
+        );
   }
 
-  Future<List<PostModal>> fetchMorePosts(DocumentSnapshot lastDoc, {int limit = 10}) async {
+  Future<List<PostModal>> fetchMorePosts(
+    DocumentSnapshot lastDoc, {
+    int limit = 10,
+  }) async {
     print("Loading 10");
-    final Query = await _db.orderBy("timestamp",  descending: true).startAfterDocument(lastDoc).limit(limit).get();
+    final Query = await _db
+        .orderBy("timestamp", descending: true)
+        .startAfterDocument(lastDoc)
+        .limit(limit)
+        .get();
 
-    return Query.docs.map((doc) => PostModal.fromFirestore(doc.data())).toList();
+    return Query.docs
+        .map((doc) => PostModal.fromFirestore(doc.data()))
+        .toList();
   }
-
 }

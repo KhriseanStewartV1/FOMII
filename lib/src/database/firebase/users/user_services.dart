@@ -34,7 +34,7 @@ class UserServices {
     }
   }
 
-  Future<DocumentSnapshot?> readUser(String userId) async {
+  Future<DocumentSnapshot<Map<String, dynamic>>?> readUser(String userId) async {
     try {
       final doc = await _instance.collection("users").doc(userId).get();
       return doc;

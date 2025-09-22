@@ -1,14 +1,18 @@
 import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/status/status_service.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
+import 'package:fomo_connect/src/database/others/calender_service.dart';
 import 'package:fomo_connect/src/database/others/image.dart';
 import 'package:fomo_connect/src/database/storage/image.dart';
+import 'package:fomo_connect/src/modal/event_model.dart';
 import 'package:fomo_connect/src/modal/status_model.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 
 class RecentEvents extends StatefulWidget {
   const RecentEvents({super.key});
@@ -58,55 +62,53 @@ class _RecentEventsState extends State<RecentEvents> {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 90, maxHeight: 120),
-      child: FutureBuilder(
-        future: StatusService().readStatus(context),
-        builder: (context, async) {
-          return ListView.separated(
-            scrollDirection: Axis.horizontal,
-            separatorBuilder: (context, index) => const SizedBox(width: 8),
-            itemCount: 10,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                // 👇 First circle = Add Event
-                return GestureDetector(
-                  onTap: statusImg,
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Colors.grey.shade300,
-                        child: const Icon(
-                          Icons.add,
-                          size: 32,
-                          color: Colors.black,
-                        ),
-                      ),
-                      Text("Add Event"),
-                    ],
-                  ),
-                );
-              }
+    String formatDateTimeString(String dateString) {
+      try {
+        final dateTime = DateTime.parse(dateString);
+        final now = DateTime.now();
+        final difference = dateTime.difference(now);
 
-              // 👇 Regular circles
-              return GestureDetector(
-                onTap: () => _openFullScreenImage(
-                  context,
-                  "https://th.bing.com/th/id/R.28a3e58f049ae2d5edd61d5e2c767643?rik=U%2fM8tTxy0BAlJg&pid=ImgRaw&r=0",
-                ),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundImage: NetworkImage(
-                        "https://th.bing.com/th/id/R.28a3e58f049ae2d5edd61d5e2c767643?rik=U%2fM8tTxy0BAlJg&pid=ImgRaw&r=0",
-                      ),
-                    ),
-                    Text("Add Event"),
-                  ],
-                ),
-              );
+        if (difference.inDays == 0) {
+          return 'Today';
+        } else if (difference.inDays == 1) {
+          return 'Tomorrow';
+        } else if (difference.inDays < 7) {
+          return DateFormat('EEEE').format(dateTime);
+        } else {
+          return DateFormat('MMM d').format(dateTime);
+        }
+      } catch (e) {
+        return dateString;
+      }
+    }
+
+    return Container(
+      height: 120,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: StreamBuilder(
+        stream: loadEvent(AuthService().user?.uid ?? ''),
+        builder: (context, async) {
+          if (async.connectionState == ConnectionState.waiting) {
+            return _buildLoadingShimmer();
+          }
+
+          if (async.hasError) {
+            return _buildErrorState();
+          }
+
+          if (!async.hasData || async.data == null || async.data!.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          final events = async.data!;
+
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: events.length, // +1 for add event button
+            itemBuilder: (context, index) {
+              final event = events[index];
+              return _buildEventCard(event, formatDateTimeString);
             },
           );
         },
@@ -114,28 +116,347 @@ class _RecentEventsState extends State<RecentEvents> {
     );
   }
 
-  void _openFullScreenImage(BuildContext context, String imageUrl) {
-    showDialog(
-      context: context,
-      builder: (context) => GestureDetector(
-        onTap: () => Navigator.of(context).pop(), // tap to close
-        child: Container(
-          color: Colors.black.withOpacity(0.4),
-          alignment: Alignment.center,
-          child: Hero(
-            tag: imageUrl,
-            child: InteractiveViewer(
-              panEnabled: true,
-              minScale: 0.5,
-              maxScale: 4.0,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.contain,
+  Widget _buildEventCard(EventModel event, String Function(String) formatDate) {
+    final bool isUpcoming = _isEventUpcoming(event.dateTime);
+
+    return Container(
+      width: 80,
+      margin: const EdgeInsets.only(right: 12),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () => _showEventDetails(event),
+            onLongPress: () => _showEventOptions(event),
+            child: Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                gradient: isUpcoming
+                    ? const LinearGradient(
+                        colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : LinearGradient(
+                        colors: [Colors.grey[400]!, Colors.grey[500]!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: isUpcoming
+                        ? const Color(0xFFFF6B6B).withOpacity(0.3)
+                        : Colors.grey.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Container(
+                margin: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: ClipOval(child: Icon(Icons.calendar_today)),
               ),
             ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            event.title,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: Colors.grey[800],
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            formatDate(event.dateTime),
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              fontWeight: FontWeight.w300,
+              color: isUpcoming ? const Color(0xFFFF6B6B) : Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingShimmer() {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: 5,
+      itemBuilder: (context, index) {
+        return Container(
+          width: 80,
+          margin: const EdgeInsets.only(right: 12),
+          child: Column(
+            children: [
+              Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  width: 50,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  width: 35,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 32, color: Colors.grey[400]),
+          const SizedBox(height: 8),
+          Text(
+            'Failed to load events',
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.event_available, size: 32, color: Colors.grey[400]),
+          const SizedBox(height: 8),
+          Text(
+            'No upcoming events',
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isEventUpcoming(String? dateTimeString) {
+    if (dateTimeString == null) return false;
+    try {
+      final eventDate = DateTime.parse(dateTimeString);
+      final now = DateTime.now();
+      return eventDate.isAfter(now);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  void _showEventDetails(EventModel event) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.3,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(20),
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                event.title,
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    event.location,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    _formatFullDateTime(event.dateTime),
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF667EEA),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Join Event',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => addGoing(event),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF667EEA),
+                        side: const BorderSide(color: Color(0xFF667EEA)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Going',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  void addGoing(EventModel event) {
+    try {
+      event.going!.add(uid);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void _showEventOptions(dynamic event) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Edit Event'),
+              onTap: () {
+                Navigator.pop(context);
+                // Add edit functionality
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share),
+              title: const Text('Share Event'),
+              onTap: () {
+                Navigator.pop(context);
+                // Add share functionality
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.highlight_remove, color: Colors.red),
+              title: const Text(
+                'Remove from Pinned',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                // Add unpin functionality
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatFullDateTime(String dateString) {
+    try {
+      final dateTime = DateTime.parse(dateString);
+      return DateFormat('EEEE, MMMM d, yyyy \'at\' h:mm a').format(dateTime);
+    } catch (e) {
+      return dateString;
+    }
   }
 }

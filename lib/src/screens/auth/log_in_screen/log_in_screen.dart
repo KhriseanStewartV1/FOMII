@@ -7,7 +7,7 @@ import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/modal/user_modal.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LogInScreen extends StatefulWidget {
@@ -85,6 +85,10 @@ class _LogInScreenState extends State<LogInScreen> {
             .collection('users')
             .doc(userCredential.user!.uid)
             .get();
+        displayRoundedSnackBar(
+          context,
+          "By Signing Up You Agree to the Terms and Conditions!",
+        );
         if (!userDoc.exists) {
           //create user in firestore
           final user = FirebaseAuth.instance.currentUser!;
@@ -102,6 +106,7 @@ class _LogInScreenState extends State<LogInScreen> {
               email: user.email,
               bio: '',
               uniqueId: uniqueId,
+              terms: true
             ),
           );
 
@@ -140,9 +145,7 @@ class _LogInScreenState extends State<LogInScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 //SVG
-                Expanded(
-                  child: Lottie.asset('assets/lottie/login.json', repeat: true),
-                ),
+                Expanded(child: Image.asset("assets/fomo.png")),
                 SizedBox(height: 30),
                 Form(
                   child: Column(
@@ -151,11 +154,9 @@ class _LogInScreenState extends State<LogInScreen> {
                       TextFormField(
                         controller: _email,
                         decoration: InputDecoration(
+                          border: InputBorder.none,
                           icon: Icon(Icons.email),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          labelText: 'Enter Your Email',
+                          labelText: 'Email',
                         ),
                         keyboardType: TextInputType.emailAddress,
                       ),
@@ -164,6 +165,7 @@ class _LogInScreenState extends State<LogInScreen> {
                         obscureText: showPassword,
                         keyboardType: TextInputType.visiblePassword,
                         decoration: InputDecoration(
+                          border: InputBorder.none,
                           icon: Icon(Icons.lock_outline_rounded),
                           suffixIcon: IconButton(
                             onPressed: hidePassword,
@@ -172,9 +174,6 @@ class _LogInScreenState extends State<LogInScreen> {
                                   ? Icons.visibility_off
                                   : Icons.visibility,
                             ),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
                           ),
                           labelText: 'Password',
                         ),
@@ -193,7 +192,7 @@ class _LogInScreenState extends State<LogInScreen> {
                       ),
                       child: Text(
                         "Forgot Password?",
-                        style: GoogleFonts.poppins(fontSize: 12),
+                        style: GoogleFonts.poppins(fontSize: 13),
                       ),
                     ),
                     Row(
@@ -206,7 +205,7 @@ class _LogInScreenState extends State<LogInScreen> {
                             });
                           },
                         ),
-                        Text("Remember me?", style: TextStyle(fontSize: 12)),
+                        Text("Remember me?", style: TextStyle(fontSize: 13)),
                       ],
                     ),
                   ],
@@ -249,8 +248,9 @@ class _LogInScreenState extends State<LogInScreen> {
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 20,
                       children: [
-                        // Icon(Icons.g_mobiledata, size: 30),
+                        Icon(Bootstrap.google, size: 23),
                         Text(
                           "Google",
                           style: GoogleFonts.poppins(

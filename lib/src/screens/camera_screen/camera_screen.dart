@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:deepar_flutter_plus/deepar_flutter_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/src/screens/camera_screen/filter_data.dart';
-import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/screens/loading_splash.dart/loading_screen.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});

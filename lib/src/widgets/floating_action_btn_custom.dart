@@ -16,19 +16,6 @@ class _ExpandableFabState extends State<ExpandableFab> {
       children: [
         if (_showExtra)
           Padding(
-            padding: const EdgeInsets.only(bottom: 130), // position above
-            child: FloatingActionButton(
-              mini: true,
-              heroTag: 'Add Event',
-              tooltip: 'Create Event',
-              onPressed: () {
-                Navigator.pushNamed(context, AppRouter.addEvent);
-              },
-              child: Icon(Icons.calendar_month),
-            ),
-          ),
-        if (_showExtra)
-          Padding(
             padding: const EdgeInsets.only(bottom: 70), // position above
             child: FloatingActionButton(
               mini: true,

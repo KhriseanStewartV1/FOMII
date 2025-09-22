@@ -13,6 +13,29 @@ class InboxItem {
     required this.lastMessageAt,
   });
 
+  factory InboxItem.fromMap(
+    Map<String, dynamic> map,
+    String chatId,
+    String currentUserId,
+  ) {
+    final List<dynamic> participants = map['participants'] ?? [];
+    String otherUserId = participants.firstWhere(
+      (id) => id != currentUserId,
+      orElse: () => '',
+    );
+
+    final lastMessage = map['lastMessage'] ?? '';
+    final timestamp = map['timestamp'] ?? DateTime.now().millisecondsSinceEpoch;
+    final lastMessageAt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+    return InboxItem(
+      chatId: chatId,
+      otherUserId: otherUserId,
+      lastMessage: lastMessage,
+      lastMessageAt: lastMessageAt,
+    );
+  }
+
   factory InboxItem.fromDocument(DocumentSnapshot doc, String currentUserId) {
     final data = doc.data() as Map<String, dynamic>;
 
@@ -32,7 +55,7 @@ class InboxItem {
     final String lastMessage = data['lastMessage'] ?? '';
 
     // Parse lastMessageAt, which could be a Timestamp
-    final timestamp = data['lastMessageAt'];
+    final timestamp = data['timestamp'];
     DateTime lastMessageAt;
     if (timestamp is Timestamp) {
       lastMessageAt = timestamp.toDate();

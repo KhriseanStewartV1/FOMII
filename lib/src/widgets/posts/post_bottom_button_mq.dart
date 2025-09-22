@@ -11,7 +11,7 @@ import 'package:fomo_connect/src/database/provider/post_provider.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/widgets/constants.dart';
 import 'package:fomo_connect/src/widgets/default_card.dart';
-import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/screens/loading_splash.dart/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/mention_text_field.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:google_fonts/google_fonts.dart';

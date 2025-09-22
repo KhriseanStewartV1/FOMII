@@ -6,13 +6,13 @@ import 'package:feather_icons/feather_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
-import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/widgets/constants.dart';
-import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/widgets/event_widget/event_post_card.dart';
+import 'package:fomo_connect/src/screens/loading_splash.dart/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/mention_text_field.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:fomo_connect/src/widgets/posts/carousel_slider_widget.dart';
@@ -92,8 +92,6 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
         children: [
           _buildPostProfileText(widget.post),
           SizedBox(height: 8),
-          if (widget.post.media.isNotEmpty) buildMedia(widget.post),
-          SizedBox(height: 8),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8),
             child: quill.QuillEditor(
@@ -102,6 +100,11 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
               focusNode: FocusNode(),
             ),
           ),
+          SizedBox(height: 2),
+          if (widget.post.event != null)
+            EventPostCard(event: widget.post.event!, post: widget.post,),
+          SizedBox(height: 2),
+          if (widget.post.media.isNotEmpty) buildMedia(widget.post),
           SizedBox(height: 4),
           Divider(),
           if (size.width < 361)
@@ -163,150 +166,111 @@ class _PostWidgetProfileState extends State<PostWidgetProfile> {
           );
         }
         final data = snapshot.data;
-        return FutureBuilder(
-          future: UserServices().readUser(AuthService().user!.uid),
-          builder: (context, userSnapshot) {
-            if (userSnapshot.connectionState == ConnectionState.waiting) {
-              return Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, color: Colors.grey[600]),
-                  ),
-                  SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(width: 80, height: 12, color: Colors.grey[300]),
-                      SizedBox(height: 4),
-                      Container(width: 50, height: 10, color: Colors.grey[200]),
-                    ],
-                  ),
-                ],
-              );
-            }
-            final userInfo = userSnapshot.data!.data() as Map<String, dynamic>;
-            print(userInfo);
-            return Column(
+        return Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              spacing: 20,
               children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    SizedBox(
+                      height: 48,
+                      width: 48,
+                      child: ClipRRect(
+                        borderRadius: BorderRadiusGeometry.circular(100),
+                        child: CachedNetworkImage(
+                          imageUrl: data?['profilePic'] ?? '',
+                          fit: BoxFit.cover,
+                          progressIndicatorBuilder:
+                              (context, url, downloadProgress) => Center(
+                                child: CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: Colors.white,
+                                  child: Icon(Icons.person),
+                                ),
+                              ),
+                          errorWidget: (context, url, error) {
+                            return Center(child: Icon(Icons.person));
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 4,
                       children: [
-                        SizedBox(
-                          height: 48,
-                          width: 48,
-                          child: ClipRRect(
-                            borderRadius: BorderRadiusGeometry.circular(100),
-                            child: CachedNetworkImage(
-                              imageUrl: data?['profilePic'] ?? '',
-                              fit: BoxFit.cover,
-                              progressIndicatorBuilder:
-                                  (context, url, downloadProgress) => Center(
-                                    child: CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor: Colors.white,
-                                      child: Icon(Icons.person),
-                                    ),
-                                  ),
-                              errorWidget: (context, url, error) {
-                                return Center(child: Icon(Icons.person));
-                              },
-                            ),
+                        Text(
+                          data?['name'] ?? "Can't fetch User",
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  data?['name'] ?? "Can't fetch User",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                //     Text(
-                                //       userInfo['uniqueId'] ?? "",
-                                //       style: GoogleFonts.poppins(
-                                //         fontSize: 12,
-                                //         fontWeight: FontWeight.w400,
-                                //       ),
-                                //     ),
-                                //   ],
-                                // ),
-                                Text(
-                                  getRelativeTime(post.timestamp),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w300,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        PopupMenuButton(
-                          icon: Icon(Icons.more_horiz),
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: "follow",
-                              child: Text(
-                                followMessage == 'Already following'
-                                    ? "Following"
-                                    : 'Follow',
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: "delete",
-                              child: Text(
-                                'Delete',
-                                style: TextStyle(color: Colors.redAccent),
-                              ),
-                            ),
-                          ],
-                          onSelected: (value) async {
-                            if (value == "follow") {
-                              String message = await UserServices()
-                                  .followingSystem(post.userId, isFollowing);
-                              setState(() {
-                                followMessage = message;
-                                isFollowing = !isFollowing;
-                              });
-                              displayRoundedSnackBar(context, followMessage);
-                            }
-                            if (value == 'delete') {
-                              bool isDeleting = await PostServices().deletePost(
-                                post.uuid,
-                              );
-
-                              if (!mounted) return;
-
-                              if (isDeleting) {
-                                displayRoundedSnackBar(context, "Post Deleted");
-                              } else {
-                                displayRoundedSnackBar(
-                                  context,
-                                  "Error happened",
-                                );
-                              }
-                            }
-                          },
+                        Text(
+                          getRelativeTime(post.timestamp),
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w300,
+                          ),
                         ),
                       ],
                     ),
-                    // SizedBox(height: 5),
                   ],
                 ),
+                PopupMenuButton(
+                  icon: Icon(Icons.more_horiz),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: "follow",
+                      child: Text(
+                        followMessage == 'Already following'
+                            ? "Following"
+                            : 'Follow',
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: "delete",
+                      child: Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
+                    ),
+                  ],
+                  onSelected: (value) async {
+                    if (value == "follow") {
+                      String message = await UserServices().followingSystem(
+                        post.userId,
+                        isFollowing,
+                      );
+                      setState(() {
+                        followMessage = message;
+                        isFollowing = !isFollowing;
+                      });
+                      displayRoundedSnackBar(context, followMessage);
+                    }
+                    if (value == 'delete') {
+                      bool isDeleting = await PostServices().deletePost(
+                        post.uuid,
+                      );
+
+                      if (!mounted) return;
+
+                      if (isDeleting) {
+                        displayRoundedSnackBar(context, "Post Deleted");
+                      } else {
+                        displayRoundedSnackBar(context, "Error happened");
+                      }
+                    }
+                  },
+                ),
               ],
-            );
-          },
+            ),
+            // SizedBox(height: 5),
+          ],
         );
       },
     );

@@ -1,15 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:fomo_connect/src/database/auth/auth_service.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
-import 'package:fomo_connect/src/widgets/beta_tester.dart';
-import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/widgets/badges/badges_widget.dart';
+import 'package:fomo_connect/src/screens/loading_splash.dart/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:fomo_connect/src/widgets/posts/post_widget_profile.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -17,7 +14,7 @@ import 'package:intl/intl.dart';
 
 // ignore: must_be_immutable
 class UserProfile extends StatefulWidget {
-  DocumentSnapshot user;
+  dynamic user;
   UserProfile({super.key, required this.user});
 
   @override
@@ -31,6 +28,7 @@ class _UserProfileState extends State<UserProfile>
   bool posts1 = false;
   bool posts2 = false;
   bool followers1 = false;
+  bool verified = false;
   String followers = '0';
   String uniqueId = 'Tap to Generate';
   bool isFollowing = false;
@@ -48,44 +46,51 @@ class _UserProfileState extends State<UserProfile>
   }
 
   void loadUniqueBadge() async {
-  try {
-    final userData = await UserServices().readUser(AuthService().user!.uid);
+    try {
+      final userData = await UserServices().readUser(widget.user['userId']);
 
-    if (userData != null && userData['badges'] != null) {
-      final badges = List<String>.from(userData['badges']); // cast to List<String>
+      if (userData != null && userData['badges'] != null) {
+        final badges = List<String>.from(
+          userData['badges'],
+        ); // cast to List<String>
 
-      for (final badge in badges) {
-        switch (badge) {
-          case "tester":
-            setState(() {
-              tester = true;
-            });
-            break;
-          case "10_posts":
-            setState(() {
-              posts1 = true;
-            });
-            break;
-          case "100_posts":
-            setState(() {
-              posts2 = true;
-            });
-            break;
-          case "100_followers":
-            setState(() {
-              followers1 = true;
-            });
-            break;
-          default:
-            setState(() { });
-            break;
+        for (final badge in badges) {
+          switch (badge) {
+            case "tester":
+              setState(() {
+                tester = true;
+              });
+              break;
+            case "10_posts":
+              setState(() {
+                posts1 = true;
+              });
+              break;
+            case "100_posts":
+              setState(() {
+                posts2 = true;
+              });
+              break;
+            case "100_followers":
+              setState(() {
+                followers1 = true;
+              });
+              break;
+            case "verified":
+              setState(() {
+                verified = true;
+              });
+              break;
+            default:
+              setState(() {});
+              break;
+          }
         }
       }
+    } catch (e) {
+      print("Error getting uniqueId: $e");
     }
-  } catch (e) {
-    print("Error getting uniqueId: $e");
   }
-}
 
   void getIsFollowing(String uid) async {
     bool checkMessage = await UserServices().isFollowing(
@@ -146,7 +151,7 @@ class _UserProfileState extends State<UserProfile>
             body:
                 "${FirebaseAuth.instance.currentUser!.displayName} started following you.",
             context: context,
-            receiverUid: widget.user['userId']
+            receiverUid: widget.user['userId'],
           );
         }
         displayRoundedSnackBar(context, followMessage);
@@ -166,7 +171,7 @@ class _UserProfileState extends State<UserProfile>
     final userName = widget.user['name'];
     return Scaffold(
       appBar: AppBar(
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
           'Profile',
@@ -313,7 +318,11 @@ class _UserProfileState extends State<UserProfile>
                           ),
                         ),
                       ),
-                      tester ? BetaTesterBadge() : SizedBox.shrink()
+                      BadgesWidget(
+                        verified: verified,
+                        betaTester: tester,
+                        tenPost: posts1,
+                      ),
                     ],
                   ),
                   Row(

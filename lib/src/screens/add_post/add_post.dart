@@ -11,9 +11,11 @@ import 'package:fomo_connect/src/database/firebase/posts/post_services.dart';
 import 'package:fomo_connect/src/database/firebase/users/user_services.dart';
 import 'package:fomo_connect/src/database/others/image.dart';
 import 'package:fomo_connect/src/database/storage/image.dart';
+import 'package:fomo_connect/src/modal/event_model.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
-import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/widgets/event_widget/event_post_card.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
+import 'package:fomo_connect/src/widgets/quill_mentioner.dart';
 import 'package:fomo_connect/src/widgets/video_player_screen/video_player_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -32,6 +34,7 @@ class _AddPostState extends State<AddPost> {
   final user = FirebaseAuth.instance.currentUser;
   final userName = FirebaseAuth.instance.currentUser!.displayName;
   final String uuid = const Uuid().v4();
+  DateTime? selectedDate;
 
   late final ScrollController _scrollController;
   late final FocusNode _focusNode;
@@ -46,6 +49,11 @@ class _AddPostState extends State<AddPost> {
 
   double progress = 0;
   bool loadingVideo = false;
+
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController locationController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
+  EventModel? event;
 
   @override
   void initState() {
@@ -147,7 +155,7 @@ class _AddPostState extends State<AddPost> {
     }
   }
 
-  Future<void> checkUser() async {
+  Future<void> mentionedUser() async {
     for (var mentionedUniqueId in mentionedUsers) {
       final querySnap = await FirebaseFirestore.instance
           .collection('users')
@@ -248,13 +256,14 @@ class _AddPostState extends State<AddPost> {
         tags: tags,
         timestamp: DateTime.now(),
         media: [mediaUrls],
+        event: anonymous ? null : event,
       );
 
       await PostServices().post(post, uuid);
 
       HapticFeedback.lightImpact();
-      await checkUser();
-      // await followersNoti();
+      await mentionedUser();
+      await followersNoti();
       displayRoundedSnackBar(context, "Posted");
       Navigator.pop(context);
     } catch (e) {
@@ -270,6 +279,136 @@ class _AddPostState extends State<AddPost> {
 
   @override
   Widget build(BuildContext context) {
+    DateTime? eventDate = selectedDate ?? DateTime.now();
+    Future<void> showEventDialog() async {
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return Dialog(
+            child: Padding(
+              padding: const EdgeInsets.all(18.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Create Event",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Title
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(
+                        labelText: "Event Title",
+                        border: InputBorder.none,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Location
+                    TextField(
+                      controller: locationController,
+                      decoration: const InputDecoration(
+                        labelText: "Location",
+                        border: InputBorder.none,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // City
+                    TextField(
+                      controller: cityController,
+                      decoration: const InputDecoration(
+                        labelText: "City",
+                        border: InputBorder.none,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Date picker
+                    Row(
+                      children: [
+                        const Text("Date: "),
+                        TextButton(
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: eventDate,
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime(2099),
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                eventDate = picked;
+                              });
+                            }
+                          },
+                          child: Text(
+                            "${eventDate?.day}/${eventDate?.month}/${eventDate?.year}",
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text("Cancel"),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (titleController.text.isEmpty ||
+                                locationController.text.isEmpty ||
+                                cityController.text.isEmpty) {
+                              displaySnackBar(
+                                context,
+                                "All fields are required",
+                              );
+                              return;
+                            }
+
+                            setState(() {
+                              selectedDate = eventDate;
+                            });
+
+                            // Create EventModel
+                            setState(() {
+                              event = EventModel(
+                                title: titleController.text.trim(),
+                                dateTime: eventDate!.toIso8601String(),
+                                location: locationController.text.trim(),
+                                city: cityController.text.trim(),
+                              );
+                            });
+
+                            Navigator.pop(context);
+
+                            // You can now assign this event to your PostModal
+                            print("Event Created: ${event?.title}");
+                          },
+                          child: const Text("Create"),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         actionsPadding: EdgeInsets.only(right: 10),
@@ -278,220 +417,414 @@ class _AddPostState extends State<AddPost> {
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
-          MaterialButton(
-            onPressed: _isLoading ? null : handleSubmit,
-            color: _isLoading
-                ? Colors.grey
-                : Theme.of(context).colorScheme.primary,
-            child: _isLoading
-                ? LoadingScreen()
-                : Text('Post', style: GoogleFonts.poppins(color: Colors.white)),
+          GestureDetector(
+            onTap: _isLoading ? null : handleSubmit,
+            child: Text(
+              'Post',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+                color: _isLoading ? Colors.grey.shade300 : Colors.black,
+              ),
+            ),
           ),
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-          child: Column(
-            children: [
-              if (_isLoading && progress > 0)
-                LinearProgressIndicator(
-                  value: progress,
-                  color: Colors.grey,
-                  valueColor: AlwaysStoppedAnimation(Colors.lightBlueAccent),
-                ),
-
-              _buildProfile(),
-              const SizedBox(height: 10),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: quill.QuillEditor(
-                    controller: _controller,
-                    scrollController: _scrollController,
-                    focusNode: _focusNode,
-                    config: const quill.QuillEditorConfig(
-                      autoFocus: false,
-                      expands: true,
-                      padding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+              child: Column(
+                children: [
+                  if (_isLoading && progress > 0)
+                    LinearProgressIndicator(
+                      value: progress,
+                      color: Colors.grey,
+                      valueColor: AlwaysStoppedAnimation(
+                        Colors.lightBlueAccent,
+                      ),
+                    ),
+                  _buildProfile(),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: MentionQuillEditor(
+                        focusNode: _focusNode,
+                        scrollController: _scrollController,
+                        controller: _controller,
+                        onMentionSelected: (mentionId) {
+                          // Here mentionId is the actual user uid
+                          if (!mentionedUsers.contains(mentionId)) {
+                            mentionedUsers.add(mentionId);
+                          }
+                          print('Mentioned Users IDs: $mentionedUsers');
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              if (mediaFiles.length > 0)
-                Container(
-                  height: 100,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: mediaFiles.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final item = mediaFiles[index];
-                      final file = item["file"] as File;
-                      final type = item["type"];
+                  const SizedBox(height: 4),
+                  if (mediaFiles.length > 0)
+                    Container(
+                      height: 100,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: mediaFiles.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final item = mediaFiles[index];
+                          final file = item["file"] as File;
+                          final type = item["type"];
 
-                      return Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: type == "image"
-                                ? Image.file(
-                                    file,
-                                    width: 120,
-                                    height: 120,
-                                    fit: BoxFit.cover,
-                                  )
-                                : type == "video"
-                                ? GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => VideoPlayerScreen(
-                                            file: file,
-                                            isUrl: false,
-                                          ),
+                          return Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: type == "image"
+                                    ? Image.file(
+                                        file,
+                                        width: 120,
+                                        height: 120,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : type == "video"
+                                    ? GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => VideoPlayerScreen(
+                                                file: file,
+                                                isUrl: false,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: FutureBuilder<Uint8List?>(
+                                          future: getVideoThumbnail(file.path),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return Container(
+                                                width: 120,
+                                                height: 120,
+                                                color: Colors.black12,
+                                                child: const Center(
+                                                  child:
+                                                      CircularProgressIndicator(),
+                                                ),
+                                              );
+                                            }
+                                            if (!snapshot.hasData) {
+                                              return Container(
+                                                width: 120,
+                                                height: 120,
+                                                color: Colors.black12,
+                                                child: const Icon(
+                                                  Icons.videocam,
+                                                  color: Colors.blue,
+                                                ),
+                                              );
+                                            }
+                                            return Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Image.memory(
+                                                  snapshot.data!,
+                                                  width: 120,
+                                                  height: 120,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                                const Icon(
+                                                  Icons.play_circle_fill,
+                                                  size: 40,
+                                                  color: Colors.white,
+                                                ),
+                                              ],
+                                            );
+                                          },
                                         ),
-                                      );
-                                    },
-                                    child: FutureBuilder<Uint8List?>(
-                                      future: getVideoThumbnail(file.path),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          return Container(
-                                            width: 120,
-                                            height: 120,
-                                            color: Colors.black12,
-                                            child: const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            ),
-                                          );
-                                        }
-                                        if (!snapshot.hasData) {
-                                          return Container(
-                                            width: 120,
-                                            height: 120,
-                                            color: Colors.black12,
-                                            child: const Icon(
-                                              Icons.videocam,
-                                              color: Colors.blue,
-                                            ),
-                                          );
-                                        }
-                                        return Stack(
-                                          alignment: Alignment.center,
-                                          children: [
-                                            Image.memory(
-                                              snapshot.data!,
-                                              width: 120,
-                                              height: 120,
-                                              fit: BoxFit.cover,
-                                            ),
-                                            const Icon(
-                                              Icons.play_circle_fill,
-                                              size: 40,
-                                              color: Colors.white,
-                                            ),
-                                          ],
-                                        );
-                                      },
+                                      )
+                                    : const SizedBox.shrink(),
+                              ),
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() => mediaFiles.removeAt(index));
+                                  },
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.black54,
                                     ),
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() => mediaFiles.removeAt(index));
-                              },
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.black54,
-                                ),
-                                padding: const EdgeInsets.all(4),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 16,
-                                  color: Colors.white,
+                                    padding: const EdgeInsets.all(4),
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  if (selectedDate != null) EventPostCard(event: event!),
+                  quill.QuillSimpleToolbar(
+                    controller: _controller,
+                    config: const quill.QuillSimpleToolbarConfig(
+                      multiRowsDisplay: false,
+                      showAlignmentButtons: false,
+                      showClipboardCut: false,
+                      showClipboardCopy: false,
+                      showClipboardPaste: false,
+                      showClearFormat: false,
+                      showListCheck: false,
+                    ),
+                  ),
+                  const SizedBox(height: 100),
+                ],
+              ),
+            ),
+            DraggableScrollableSheet(
+              initialChildSize: 0.14, // default height (70%)
+              minChildSize: 0.14, // collapsed height
+              maxChildSize: 0.95, // fully expanded
+              snapSizes: [0.14, 0.95],
+              snap: true,
+              shouldCloseOnMinExtent: false,
+              builder: (context, scrollController) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black26, blurRadius: 8),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    padding: EdgeInsets.symmetric(
+                      vertical: 6.0,
+                      horizontal: 2.0,
+                    ),
+                    child: Column(
+                      spacing: 8,
+                      children: [
+                        SizedBox(height: 4),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 80.0,
+                            vertical: 8.0,
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(color: Colors.grey),
+                            height: 4.0,
+                          ),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          children: tags
+                              .map(
+                                (tag) => Chip(
+                                  label: Text(tag),
+                                  onDeleted: () =>
+                                      setState(() => tags.remove(tag)),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                        ListTile(
+                          leading: Icon(
+                            Icons.videocam_rounded,
+                            color: Colors.red,
+                            size: 28,
+                          ),
+                          title: Text(
+                            "Upload Video",
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              const SizedBox(height: 4),
-              quill.QuillSimpleToolbar(
-                controller: _controller,
-                config: const quill.QuillSimpleToolbarConfig(
-                  multiRowsDisplay: false,
-                  showAlignmentButtons: false,
-                  showClipboardCut: false,
-                  showClipboardCopy: false,
-                  showClipboardPaste: false,
-                  showClearFormat: false,
-                  showListCheck: false,
-                ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: tagController,
-                      decoration: const InputDecoration(
-                        hintText: 'Add a tag',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                      onSubmitted: (_) => addTag(),
+                          onTap: () => loadingVideo ? null : pickVideo(),
+                        ),
+                        ListTile(
+                          leading: Icon(
+                            Icons.image_rounded,
+                            color: Colors.lightBlueAccent,
+                            size: 28,
+                          ),
+                          title: Text(
+                            "From Gallery",
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          onTap: () => pickImage(fromCamera: false),
+                        ),
+                        ListTile(
+                          leading: Icon(
+                            Icons.camera,
+                            color: Colors.orange,
+                            size: 28,
+                          ),
+                          title: Text(
+                            "Take Picture",
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          onTap: () {
+                            pickImage(fromCamera: true);
+                          },
+                        ),
+                        ListTile(
+                          leading: Icon(
+                            Icons.calendar_month,
+                            color: event == null ? Colors.green : Colors.grey,
+                            size: 28,
+                          ),
+                          title: Text(
+                            "Set Date",
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          onTap: () async {
+                            event == null ? showEventDialog() : null;
+                          },
+                        ),
+                        ListTile(
+                          leading: Icon(
+                            Icons.tag,
+                            color: Colors.amberAccent,
+                            size: 28,
+                          ),
+                          title: Text(
+                            "Tag",
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          onTap: () => showDialog(
+                            context: context,
+                            builder: (context) {
+                              return Dialog(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18.0),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        "Tag",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 20),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: TextField(
+                                              controller: tagController,
+                                              decoration: const InputDecoration(
+                                                hintText: 'Add a tag',
+                                                border: InputBorder.none,
+                                                contentPadding:
+                                                    EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                    ),
+                                              ),
+                                              onSubmitted: (_) => addTag(),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.add),
+                                            onPressed: addTag,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        // ListTile(
+                        //   leading: Icon(
+                        //     Icons.group_add_outlined,
+                        //     color: Colors.amberAccent,
+                        //     size: 28,
+                        //   ),
+                        //   title: Text(
+                        //     "Mention Someone",
+                        //     style: GoogleFonts.poppins(
+                        //       fontSize: 16,
+                        //       fontWeight: FontWeight.w400,
+                        //     ),
+                        //   ),
+                        //   onTap: () => showDialog(
+                        //     context: context,
+                        //     builder: (context) {
+                        //       return Dialog(
+                        //         child: Padding(
+                        //           padding: const EdgeInsets.all(18.0),
+                        //           child: Column(
+                        //             mainAxisSize: MainAxisSize.min,
+                        //             crossAxisAlignment:
+                        //                 CrossAxisAlignment.center,
+                        //             children: [
+                        //               Text(
+                        //                 "Tag",
+                        //                 style: GoogleFonts.poppins(
+                        //                   fontSize: 18,
+                        //                   fontWeight: FontWeight.bold,
+                        //                 ),
+                        //               ),
+                        //               SizedBox(height: 20),
+                        //               Row(
+                        //                 children: [
+                        //                   Expanded(
+                        //                     child: MentionTextField(
+                        //                       controller: _mentionController,
+                        //                       onMentionSelected: (mentionId) {
+                        //                         mentionedUsers.add(mentionId);
+                        //                       },
+                        //                     ),
+                        //                   ),
+                        //                 ],
+                        //               ),
+                        //             ],
+                        //           ),
+                        //         ),
+                        //       );
+                        //     },
+                        //   ),
+                        // ),
+                      ],
                     ),
                   ),
-                  IconButton(icon: const Icon(Icons.add), onPressed: addTag),
-                ],
-              ),
-              Wrap(
-                spacing: 8,
-                children: tags
-                    .map(
-                      (tag) => Chip(
-                        label: Text(tag),
-                        onDeleted: () => setState(() => tags.remove(tag)),
-                      ),
-                    )
-                    .toList(),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.photo, color: Colors.green),
-                    onPressed: () => pickImage(fromCamera: false),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.camera, color: Colors.red),
-                    onPressed: () => pickImage(fromCamera: true),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.videocam,
-                      color: loadingVideo
-                          ? Colors.grey
-                          : Colors.lightBlueAccent,
-                    ),
-                    onPressed: () => loadingVideo ? null : pickVideo(),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

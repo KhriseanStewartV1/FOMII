@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:fomo_connect/src/database/others/image.dart';
 import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/widgets/video_player_screen/video_player_mini.dart';
+import 'package:shimmer/shimmer.dart';
 
 Future<ui.Image> _getImageSize(String url) async {
   final completer = Completer<ui.Image>();
@@ -43,14 +44,17 @@ void _openFullScreenImage(BuildContext context, String imageUrl) {
       child: Container(
         color: Colors.black.withOpacity(0.8),
         alignment: Alignment.center,
-        child: Hero(
-          tag:
-              imageUrl, // optional: for smooth transition if using Hero elsewhere
-          child: InteractiveViewer(
-            panEnabled: true,
-            minScale: 0.5,
-            maxScale: 4.0,
-            child: CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover),
+        child: ClipRRect(
+          borderRadius: BorderRadiusGeometry.circular(10),
+          child: Hero(
+            tag:
+                imageUrl, // optional: for smooth transition if using Hero elsewhere
+            child: InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover),
+            ),
           ),
         ),
       ),
@@ -112,15 +116,18 @@ Widget buildMedia(PostModal post) {
                       } else {
                         return GestureDetector(
                           onTap: () => _openFullScreenImage(context, url),
-                          child: CachedNetworkImage(
-                            imageUrl: url,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            placeholder: (context, url) =>
-                                Icon(Icons.image_not_supported_outlined),
-                            errorWidget: (context, url, error) =>
-                                Center(child: Icon(Icons.error)),
+                          child: ClipRRect(
+                            borderRadius: BorderRadiusGeometry.circular(6),
+                            child: CachedNetworkImage(
+                              imageUrl: url,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              placeholder: (context, url) =>
+                                  Image.network(url, fit: BoxFit.cover),
+                              errorWidget: (context, url, error) =>
+                                  Center(child: Icon(Icons.error)),
+                            ),
                           ),
                         );
                       }
@@ -129,7 +136,18 @@ Widget buildMedia(PostModal post) {
                 );
               },
             )
-          : Center(child: CircularProgressIndicator());
+          : Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                width: double.infinity,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+            );
     },
   );
 }

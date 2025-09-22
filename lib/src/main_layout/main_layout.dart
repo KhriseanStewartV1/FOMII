@@ -7,8 +7,8 @@ import 'package:fomo_connect/src/database/firebase/chat/chat_service.dart';
 import 'package:fomo_connect/src/screens/auth/log_in_screen/log_in_screen.dart';
 import 'package:fomo_connect/src/screens/home_screen/home_screen.dart';
 import 'package:fomo_connect/src/screens/inbox_screen/inbox_screen.dart';
+import 'package:fomo_connect/src/screens/loading_splash.dart/splash_screen.dart';
 import 'package:fomo_connect/src/screens/profile_screen/profile_screen.dart';
-import 'package:fomo_connect/src/widgets/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 import 'package:upgrader/upgrader.dart';
@@ -64,7 +64,7 @@ class _MainLayoutState extends State<MainLayout> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, s) {
         if (!s.hasData) {
-          return Center(child: LoadingScreen());
+          return Center(child: LoadingSplashScreen(isStarting: false));
         }
         final user = s.data;
         if (user == null) {

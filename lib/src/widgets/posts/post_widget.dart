@@ -15,7 +15,8 @@ import 'package:fomo_connect/src/modal/post_modal.dart';
 import 'package:fomo_connect/src/screens/profile_screen/user_profile.dart';
 import 'package:fomo_connect/src/widgets/constants.dart';
 import 'package:fomo_connect/src/widgets/default_card.dart';
-import 'package:fomo_connect/src/widgets/loading_screen.dart';
+import 'package:fomo_connect/src/widgets/event_widget/event_post_card.dart';
+import 'package:fomo_connect/src/screens/loading_splash.dart/loading_screen.dart';
 import 'package:fomo_connect/src/widgets/mention_text_field.dart';
 import 'package:fomo_connect/src/widgets/misc.dart';
 import 'package:fomo_connect/src/widgets/posts/carousel_slider_widget.dart';
@@ -100,8 +101,6 @@ class _PostWidgetState extends State<PostWidget> {
               ? _buildAnonymousProfile(widget.post)
               : _buildPostProfileText(widget.post),
           SizedBox(height: 8),
-          if (widget.post.media.isNotEmpty) buildMedia(widget.post),
-          SizedBox(height: 8),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8),
             child: quill.QuillEditor.basic(
@@ -111,6 +110,11 @@ class _PostWidgetState extends State<PostWidget> {
               config: quill.QuillEditorConfig(checkBoxReadOnly: true),
             ),
           ),
+          SizedBox(height: 2),
+          if (widget.post.event != null)
+            EventPostCard(event: widget.post.event!, post: widget.post,),
+          SizedBox(height: 2),
+          if (widget.post.media.isNotEmpty) buildMedia(widget.post),
           if (size.width < 361)
             PostBottomButtons(post: widget.post)
           else
@@ -119,7 +123,6 @@ class _PostWidgetState extends State<PostWidget> {
       ),
     );
   }
-
 
   showCommentModal() {
     return showModalBottomSheet(
@@ -518,7 +521,6 @@ class _PostWidgetState extends State<PostWidget> {
                   ),
                 ],
               ),
-              // SizedBox(height: 5),
             ],
           ),
         );

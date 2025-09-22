@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:fomo_connect/src/modal/event_model.dart';
 
 class PostModal {
   final String userId;
@@ -10,7 +11,8 @@ class PostModal {
   final List<dynamic> likes;
   final List<dynamic> reposts;
   final List<dynamic> mentions;
-  final List<Map<String, dynamic>> media; // <-- changed from imageUrl
+  final List<Map<String, dynamic>> media; // {url, type}
+  final EventModel? event;
 
   PostModal({
     required this.userId,
@@ -20,6 +22,7 @@ class PostModal {
     required this.uuid,
     required this.richText,
     required this.media,
+    this.event,
     List<dynamic>? likes,
     List<dynamic>? reposts,
     List<dynamic>? mentions,
@@ -27,7 +30,7 @@ class PostModal {
        reposts = reposts ?? [],
        mentions = mentions ?? [];
 
-  // Convert to Map for Firebase storage
+  /// Convert to Map for Firebase storage
   Map<String, dynamic> toMap() {
     return {
       'postId': uuid,
@@ -35,15 +38,16 @@ class PostModal {
       'userName': userName,
       'tags': tags,
       'timestamp': timestamp.toIso8601String(),
-      'media': media, // store the list of {url, type}
+      'media': media,
       'likes': likes,
       'reposts': reposts,
       'mentions': mentions,
       'richText': richText,
+      'event': event?.toMap(), // <-- properly convert EventModel
     };
   }
 
-  // Create an instance from Map
+  /// Create an instance from Map
   factory PostModal.fromMap(Map<String, dynamic> map) {
     List<Map<String, dynamic>> parsedRichText = [];
 
@@ -68,9 +72,13 @@ class PostModal {
       reposts: List<dynamic>.from(map['reposts'] ?? []),
       mentions: List<dynamic>.from(map['mentions'] ?? []),
       richText: parsedRichText,
+      event: map['event'] != null
+          ? EventModel.fromMap(Map<String, dynamic>.from(map['event']))
+          : null,
     );
   }
 
+  /// For Firestore snapshots
   factory PostModal.fromFirestore(Map<String, dynamic> data) {
     List<Map<String, dynamic>> parsedRichText = [];
 
@@ -95,6 +103,9 @@ class PostModal {
       reposts: List<dynamic>.from(data['reposts'] ?? []),
       mentions: List<dynamic>.from(data['mentions'] ?? []),
       richText: parsedRichText,
+      event: data['event'] != null
+          ? EventModel.fromMap(Map<String, dynamic>.from(data['event']))
+          : null,
     );
   }
 }
