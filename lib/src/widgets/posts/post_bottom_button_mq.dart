@@ -399,7 +399,8 @@ class _PostBottomButtonMqState extends State<PostBottomButtonMq>
     if (commentText.isEmpty) return;
     final userData = await UserServices().readUser(AuthService().user!.uid);
     final autherData = await UserServices().readUser(widget.post.userId);
-    final deviceToken = autherData!['token'];
+    final deviceToken = autherData?.data()?['token'];
+
     if (userData == null) return; // handle error if needed
     _commentController.clear(); // Clear input after sending
 
@@ -411,6 +412,7 @@ class _PostBottomButtonMqState extends State<PostBottomButtonMq>
       userData['name'],
       widget.post.uuid,
     );
+    if (deviceToken == null) return;
     await NotificationService.sendPushNotificationv2(
       deviceToken: deviceToken,
       title: "${userData['name']} left a comment",

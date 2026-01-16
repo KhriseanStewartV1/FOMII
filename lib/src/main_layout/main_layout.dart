@@ -80,7 +80,7 @@ class _MainLayoutState extends State<MainLayout> {
           upgrader: Upgrader(durationUntilAlertAgain: const Duration(hours: 1)),
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            body: _screens[currentIndex],
+            body: IndexedStack(children: _screens, index: currentIndex,),
             bottomNavigationBar: StreamBuilder(
               stream: ChatService().unreadMessagesCount(user.uid),
               builder: (context, snap) {

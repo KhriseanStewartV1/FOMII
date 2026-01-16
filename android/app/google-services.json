@@ -1,45 +1,74 @@
 {
   "project_info": {
-    "project_number": "625047258752",
-    "project_id": "fomo-connect",
-    "storage_bucket": "fomo-connect.firebasestorage.app"
+    "project_number": "860161320958",
+    "firebase_url": "https://fomo-connect-469702-default-rtdb.firebaseio.com",
+    "project_id": "fomo-connect-469702",
+    "storage_bucket": "fomo-connect-469702.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:625047258752:android:c1d06f5a4239ee9c904865",
+        "mobilesdk_app_id": "1:860161320958:android:4bd7961a62f22d0afa42af",
         "android_client_info": {
-          "package_name": "com.terobytez.fomii_connect"
+          "package_name": "com.terobytez.fomii"
         }
       },
       "oauth_client": [
         {
-          "client_id": "625047258752-75fu0urptmse48hkaebcjca93ijhhojr.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.terobytez.fomii_connect",
-            "certificate_hash": "827dbe394c0451cd79b2e3b4c7ad06edbd52f18c"
-          }
-        },
-        {
-          "client_id": "625047258752-ntabr0r1lmp3tsa3cblnu0fem0itorl4.apps.googleusercontent.com",
+          "client_id": "860161320958-8knqqkgdel55rvdrv9qqrdn5eiokm4s9.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCU8jpM_NI4I2F1h1zEqXZzOro8bSfefHA"
+          "current_key": "AIzaSyDCot2PqR0H4p7AFWmZJvNI36HKZX_apNo"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "625047258752-ntabr0r1lmp3tsa3cblnu0fem0itorl4.apps.googleusercontent.com",
+              "client_id": "860161320958-8knqqkgdel55rvdrv9qqrdn5eiokm4s9.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "625047258752-6mjod1ecqibk1m2oll4lec57a5vot7td.apps.googleusercontent.com",
+              "client_id": "860161320958-o0fa7if13g2pv0ik2s2olvs5ss0d06be.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fomoConnect"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:860161320958:android:17d514ee13441dbffa42af",
+        "android_client_info": {
+          "package_name": "com.terobytez.fomii_connect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "860161320958-8knqqkgdel55rvdrv9qqrdn5eiokm4s9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCot2PqR0H4p7AFWmZJvNI36HKZX_apNo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "860161320958-8knqqkgdel55rvdrv9qqrdn5eiokm4s9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "860161320958-o0fa7if13g2pv0ik2s2olvs5ss0d06be.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.example.fomoConnect"

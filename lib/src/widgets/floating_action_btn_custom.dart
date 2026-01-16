@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fomo_connect/router.dart';
+import 'package:fomo_connect/src/screens/circle_screen/circle_screen.dart';
 
 class ExpandableFab extends StatefulWidget {
   @override
@@ -14,6 +15,22 @@ class _ExpandableFabState extends State<ExpandableFab> {
     return Stack(
       alignment: Alignment.bottomRight,
       children: [
+        // if (_showExtra)
+        //   Padding(
+        //     padding: const EdgeInsets.only(bottom: 120), // position above
+        //     child: FloatingActionButton(
+        //       mini: true,
+        //       heroTag: 'Create Circle',
+        //       tooltip: 'Create Post',
+        //       onPressed: () {
+        //         Navigator.push(
+        //           context,
+        //           MaterialPageRoute(builder: (_) => CirclesScreen()),
+        //         );
+        //       },
+        //       child: Icon(Icons.circle_outlined),
+        //     ),
+        //   ),
         if (_showExtra)
           Padding(
             padding: const EdgeInsets.only(bottom: 70), // position above

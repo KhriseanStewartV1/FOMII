@@ -61,60 +61,62 @@ class _RecentEventsState extends State<RecentEvents> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    String formatDateTimeString(String dateString) {
-      try {
-        final dateTime = DateTime.parse(dateString);
-        final now = DateTime.now();
-        final difference = dateTime.difference(now);
+Widget build(BuildContext context) {
+  String formatDateTimeString(String dateString) {
+    try {
+      final dateTime = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = dateTime.difference(now);
 
-        if (difference.inDays == 0) {
-          return 'Today';
-        } else if (difference.inDays == 1) {
-          return 'Tomorrow';
-        } else if (difference.inDays < 7) {
-          return DateFormat('EEEE').format(dateTime);
-        } else {
-          return DateFormat('MMM d').format(dateTime);
-        }
-      } catch (e) {
-        return dateString;
+      if (difference.inDays == 0) {
+        return 'Today';
+      } else if (difference.inDays == 1) {
+        return 'Tomorrow';
+      } else if (difference.inDays < 7) {
+        return DateFormat('EEEE').format(dateTime);
+      } else {
+        return DateFormat('MMM d').format(dateTime);
       }
+    } catch (e) {
+      return dateString;
     }
-
-    return Container(
-      height: 120,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: StreamBuilder(
-        stream: loadEvent(AuthService().user?.uid ?? ''),
-        builder: (context, async) {
-          if (async.connectionState == ConnectionState.waiting) {
-            return _buildLoadingShimmer();
-          }
-
-          if (async.hasError) {
-            return _buildErrorState();
-          }
-
-          if (!async.hasData || async.data == null || async.data!.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          final events = async.data!;
-
-          return ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: events.length, // +1 for add event button
-            itemBuilder: (context, index) {
-              final event = events[index];
-              return _buildEventCard(event, formatDateTimeString);
-            },
-          );
-        },
-      ),
-    );
   }
+
+  return StreamBuilder(
+    stream: loadEvent(AuthService().user?.uid ?? ''),
+    builder: (context, async) {
+      if (async.connectionState == ConnectionState.waiting) {
+        return SizedBox(
+          height: 120,
+          child: _buildLoadingShimmer(),
+        );
+      }
+
+      if (async.hasError) {
+        return const SizedBox.shrink();
+      }
+
+      if (!async.hasData || async.data == null || async.data!.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      final events = async.data!;
+
+      return SizedBox(
+        height: 120, // Fixed height for the horizontal ListView
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: events.length,
+          itemBuilder: (context, index) {
+            final event = events[index];
+            return _buildEventCard(event, formatDateTimeString);
+          },
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildEventCard(EventModel event, String Function(String) formatDate) {
     final bool isUpcoming = _isEventUpcoming(event.dateTime);
@@ -265,19 +267,7 @@ class _RecentEventsState extends State<RecentEvents> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.event_available, size: 32, color: Colors.grey[400]),
-          const SizedBox(height: 8),
-          Text(
-            'No upcoming events',
-            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
+    return SizedBox.shrink();
   }
 
   bool _isEventUpcoming(String? dateTimeString) {

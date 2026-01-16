@@ -55,6 +55,8 @@ class _AddPostState extends State<AddPost> {
   final TextEditingController cityController = TextEditingController();
   EventModel? event;
 
+  String postIn = "Everyone";
+
   @override
   void initState() {
     super.initState();
@@ -64,11 +66,11 @@ class _AddPostState extends State<AddPost> {
 
   @override
   void dispose() {
+    super.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
     _controller.dispose();
     tagController.dispose();
-    super.dispose();
   }
 
   Future<void> pickImage({bool fromCamera = false}) async {
@@ -250,6 +252,7 @@ class _AddPostState extends State<AddPost> {
 
       PostModal post = PostModal(
         uuid: uuid,
+        postIn: postIn,
         userId: anonymous ? "anonymous" : user!.uid,
         userName: anonymous ? "anonymous" : userName!,
         richText: postContent,
@@ -261,7 +264,7 @@ class _AddPostState extends State<AddPost> {
 
       await PostServices().post(post, uuid);
 
-      HapticFeedback.lightImpact();
+      await HapticFeedback.heavyImpact();
       await mentionedUser();
       await followersNoti();
       displayRoundedSnackBar(context, "Posted");
@@ -420,11 +423,10 @@ class _AddPostState extends State<AddPost> {
           GestureDetector(
             onTap: _isLoading ? null : handleSubmit,
             child: Text(
-              'Post',
+              _isLoading ? "Posting..." : 'Post',
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
-                color: _isLoading ? Colors.grey.shade300 : Colors.black,
               ),
             ),
           ),
@@ -602,7 +604,7 @@ class _AddPostState extends State<AddPost> {
               builder: (context, scrollController) {
                 return Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(20),
                     ),
@@ -873,6 +875,27 @@ class _AddPostState extends State<AddPost> {
                 fontSize: 18,
               ),
             ),
+            Spacer(),
+            // SizedBox(
+            //   height: 40,
+            //   child: DropdownButton<String>(
+            //     value: postIn,
+            //     underline: const SizedBox(),
+            //     items: const [
+            //       DropdownMenuItem(value: "Everyone", child: Text("Everyone")),
+            //       DropdownMenuItem(
+            //         value: "Following",
+            //         child: Text("Following"),
+            //       ),
+            //       DropdownMenuItem(value: "Circles", child: Text("Circles")),
+            //     ],
+            //     onChanged: (value) {
+            //       setState(() {
+            //         postIn = value!;
+            //       });
+            //     },
+            //   ),
+            // ),
           ],
         );
       },

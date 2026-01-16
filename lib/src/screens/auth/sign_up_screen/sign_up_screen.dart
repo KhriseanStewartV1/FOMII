@@ -57,7 +57,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               email: email,
               bio: '',
               uniqueId: uniqueId,
-              terms: read
+              terms: read,
             ),
           );
 
@@ -129,173 +129,177 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10.0,
-              vertical: 6.0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                //SVG
-                Expanded(child: Image.asset("assets/fomo.png")),
-                SizedBox(height: 30),
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    spacing: 20,
-                    children: [
-                      TextFormField(
-                        controller: _name,
-                        keyboardType: TextInputType.name,
-                        decoration: InputDecoration(
-                          icon: Icon(Icons.person),
-                          border: InputBorder.none,
-                          labelText: 'Enter Username',
-                        ),
-                      ),
-                      TextFormField(
-                        controller: _email,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          icon: Icon(Icons.email),
-                          border: InputBorder.none,
-                          labelText: 'Enter Your Email',
-                        ),
-                      ),
-                      TextFormField(
-                        controller: _password,
-                        keyboardType: TextInputType.visiblePassword,
-                        decoration: InputDecoration(
-                          icon: Icon(Icons.lock_outline_rounded),
-                          suffixIcon: IconButton(
-                            onPressed: () {},
-                            icon: Icon(Icons.visibility),
-                          ),
-                          border: InputBorder.none,
-                          labelText: 'Password',
-                        ),
-                      ),
-                      TextFormField(
-                        controller: _authpassword,
-                        keyboardType: TextInputType.visiblePassword,
-                        decoration: InputDecoration(
-                          icon: Icon(Icons.lock_outline_rounded),
-                          suffixIcon: IconButton(
-                            onPressed: () {},
-                            icon: Icon(Icons.visibility),
-                          ),
-                          border: InputBorder.none,
-                          labelText: 'Confirm Password',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 10),
-                Row(
-                  spacing: 2,
-                  children: [
-                    Checkbox(
-                      value: read,
-                      onChanged: (value) {
-                        setState(() {
-                          read = !read;
-                        });
-                      },
-                    ),
-                    GestureDetector(
-                      onTap: () {},
-                      child: Text("I agree to the Terms and Conditions"),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                SizedBox(
-                  height: 50,
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlueAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    onPressed: _loading
-                        ? null
-                        : read
-                        ? handleSubmit
-                        : null,
-                    child: Text(
-                      "Sign up",
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                SizedBox(
-                  height: 50,
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: read
-                          ? Colors.grey.shade500
-                          : Colors.white,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    onPressed: () async {
-                      _loading
-                          ? null
-                          : read
-                          ? googleSignIn()
-                          : null;
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+      body: SingleChildScrollView(
+        child: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 6.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  //SVG
+                  SizedBox(height: 200, child: Image.asset("assets/fomo.png")),
+                  SizedBox(height: 30),
+                  Form(
+                    key: _formKey,
+                    child: Column(
                       spacing: 20,
                       children: [
-                        Icon(Bootstrap.google, size: 23),
-                        Text(
-                          "Google",
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                        TextFormField(
+                          controller: _name,
+                          keyboardType: TextInputType.name,
+                          decoration: InputDecoration(
+                            icon: Icon(Icons.person),
+                            border: UnderlineInputBorder(),
+                            labelText: 'Enter Username',
+                          ),
+                        ),
+                        TextFormField(
+                          controller: _email,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            icon: Icon(Icons.email),
+                            border: UnderlineInputBorder(),
+                            labelText: 'Enter Your Email',
+                          ),
+                        ),
+                        TextFormField(
+                          controller: _password,
+                          keyboardType: TextInputType.visiblePassword,
+                          decoration: InputDecoration(
+                            icon: Icon(Icons.lock_outline_rounded),
+                            suffixIcon: IconButton(
+                              onPressed: () {},
+                              icon: Icon(Icons.visibility),
+                            ),
+                            border: UnderlineInputBorder(),
+                            labelText: 'Password',
+                          ),
+                        ),
+                        TextFormField(
+                          controller: _authpassword,
+                          keyboardType: TextInputType.visiblePassword,
+                          decoration: InputDecoration(
+                            icon: Icon(Icons.lock_outline_rounded),
+                            suffixIcon: IconButton(
+                              onPressed: () {},
+                              icon: Icon(Icons.visibility),
+                            ),
+                            border: UnderlineInputBorder(),
+                            labelText: 'Confirm Password',
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                SizedBox(height: 20),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(
-                          context,
-                          AppRouter.login,
-                        );
-                      },
+                  SizedBox(height: 10),
+                  Row(
+                    spacing: 2,
+                    children: [
+                      Checkbox(
+                        value: read,
+                        onChanged: (value) {
+                          setState(() {
+                            read = !read;
+                          });
+                        },
+                      ),
+                      GestureDetector(
+                        onTap: () {},
+                        child: Text("I agree to the Terms and Conditions"),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  SizedBox(
+                    height: 50,
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.lightBlueAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      onPressed: _loading
+                          ? null
+                          : read
+                          ? handleSubmit
+                          : null,
                       child: Text(
-                        "Log In!",
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                        "Sign up",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  SizedBox(height: 20),
+                  SizedBox(
+                    height: 50,
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: read
+                            ? Colors.grey.shade500
+                            : Colors.white,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      onPressed: () async {
+                        _loading
+                            ? null
+                            : read
+                            ? googleSignIn()
+                            : null;
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        spacing: 20,
+                        children: [
+                          Icon(Bootstrap.google, size: 23),
+                          Text(
+                            "Google",
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(
+                            context,
+                            AppRouter.login,
+                          );
+                        },
+                        child: Text(
+                          "Log In!",
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

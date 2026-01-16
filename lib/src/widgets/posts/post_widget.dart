@@ -112,7 +112,7 @@ class _PostWidgetState extends State<PostWidget> {
           ),
           SizedBox(height: 2),
           if (widget.post.event != null)
-            EventPostCard(event: widget.post.event!, post: widget.post,),
+            EventPostCard(event: widget.post.event!, post: widget.post),
           SizedBox(height: 2),
           if (widget.post.media.isNotEmpty) buildMedia(widget.post),
           if (size.width < 361)
@@ -319,51 +319,54 @@ class _PostWidgetState extends State<PostWidget> {
       future: _getProfile(post.userId),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data == null) {
-          return Column(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                spacing: 20,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        height: 48,
-                        width: 48,
-                        child: ClipRRect(
-                          borderRadius: BorderRadiusGeometry.circular(100),
-                          child: Center(child: Icon(Icons.person)),
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  spacing: 20,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          height: 48,
+                          width: 48,
+                          child: ClipRRect(
+                            borderRadius: BorderRadiusGeometry.circular(100),
+                            child: Center(child: Icon(Icons.person)),
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 4,
-                        children: [
-                          Text(
-                            'Username',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                        SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 4,
+                          children: [
+                            Text(
+                              'Username',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          Text(
-                            getRelativeTime(post.timestamp),
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w300,
+                            Text(
+                              getRelativeTime(post.timestamp),
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w300,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              // SizedBox(height: 5),
-            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                // SizedBox(height: 5),
+              ],
+            ),
           );
         }
         final data = snapshot.data;

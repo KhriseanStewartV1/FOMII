@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:fomo_connect/src/modal/event_model.dart';
 
 class PostModal {
+  final String postIn;
   final String userId;
   final String userName;
   final List<String> tags;
@@ -16,6 +17,7 @@ class PostModal {
 
   PostModal({
     required this.userId,
+    required this.postIn,
     required this.userName,
     required this.tags,
     required this.timestamp,
@@ -34,6 +36,7 @@ class PostModal {
   Map<String, dynamic> toMap() {
     return {
       'postId': uuid,
+      'postIn': postIn,
       'userId': userId,
       'userName': userName,
       'tags': tags,
@@ -62,6 +65,7 @@ class PostModal {
     }
 
     return PostModal(
+      postIn: map['postIn'] ?? '',
       uuid: map['postId'] ?? '',
       userId: map['userId'] ?? '',
       userName: map['userName'] ?? '',
@@ -94,6 +98,7 @@ class PostModal {
 
     return PostModal(
       uuid: data['postId'] ?? '',
+      postIn: data['postIn'] ?? '',
       userId: data['userId'] ?? '',
       userName: data['userName'] ?? '',
       tags: List<String>.from(data['tags'] ?? []),

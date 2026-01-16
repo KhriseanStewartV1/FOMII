@@ -106,7 +106,7 @@ class _LogInScreenState extends State<LogInScreen> {
               email: user.email,
               bio: '',
               uniqueId: uniqueId,
-              terms: true
+              terms: true,
             ),
           );
 
@@ -139,7 +139,7 @@ class _LogInScreenState extends State<LogInScreen> {
       body: SafeArea(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -154,7 +154,7 @@ class _LogInScreenState extends State<LogInScreen> {
                       TextFormField(
                         controller: _email,
                         decoration: InputDecoration(
-                          border: InputBorder.none,
+                          border: UnderlineInputBorder(),
                           icon: Icon(Icons.email),
                           labelText: 'Email',
                         ),
@@ -165,7 +165,7 @@ class _LogInScreenState extends State<LogInScreen> {
                         obscureText: showPassword,
                         keyboardType: TextInputType.visiblePassword,
                         decoration: InputDecoration(
-                          border: InputBorder.none,
+                          border: UnderlineInputBorder(),
                           icon: Icon(Icons.lock_outline_rounded),
                           suffixIcon: IconButton(
                             onPressed: hidePassword,

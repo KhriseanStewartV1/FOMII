@@ -41,53 +41,56 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyC2aQtR9Zgmbw2_iM73dVMnpsXKbV-C_vQ',
-    appId: '1:625047258752:web:489360b1330ed41e904865',
-    messagingSenderId: '625047258752',
-    projectId: 'fomo-connect',
-    authDomain: 'fomo-connect.firebaseapp.com',
-    storageBucket: 'fomo-connect.firebasestorage.app',
-    measurementId: 'G-0C8Q8DV746',
+    apiKey: 'AIzaSyDjnIMayj02tLm5H40S7DihNuWiFiya7Bg',
+    appId: '1:860161320958:web:50bd8ae07760c9c4fa42af',
+    messagingSenderId: '860161320958',
+    projectId: 'fomo-connect-469702',
+    authDomain: 'fomo-connect-469702.firebaseapp.com',
+    databaseURL: 'https://fomo-connect-469702-default-rtdb.firebaseio.com',
+    storageBucket: 'fomo-connect-469702.firebasestorage.app',
+    measurementId: 'G-SRPPKF1LSF',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCU8jpM_NI4I2F1h1zEqXZzOro8bSfefHA',
-    appId: '1:625047258752:android:c1d06f5a4239ee9c904865',
-    messagingSenderId: '625047258752',
-    projectId: 'fomo-connect',
-    storageBucket: 'fomo-connect.firebasestorage.app',
+    apiKey: 'AIzaSyDCot2PqR0H4p7AFWmZJvNI36HKZX_apNo',
+    appId: '1:860161320958:android:17d514ee13441dbffa42af',
+    messagingSenderId: '860161320958',
+    projectId: 'fomo-connect-469702',
+    databaseURL: 'https://fomo-connect-469702-default-rtdb.firebaseio.com',
+    storageBucket: 'fomo-connect-469702.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyD3wMSQPFyrBd8H6frPEtsLXcR_Kv9lXTw',
-    appId: '1:625047258752:ios:cea8588a9bc53895904865',
-    messagingSenderId: '625047258752',
-    projectId: 'fomo-connect',
-    storageBucket: 'fomo-connect.firebasestorage.app',
-    androidClientId: '625047258752-hk1nqdrtvmq0v2l60qrdnip66m4t3s13.apps.googleusercontent.com',
-    iosClientId: '625047258752-6mjod1ecqibk1m2oll4lec57a5vot7td.apps.googleusercontent.com',
-    iosBundleId: 'com.example.fomoConnect',
+    apiKey: 'AIzaSyDdubObvPPQa3XL4yRiRLA6sz4uDq58vTc',
+    appId: '1:860161320958:ios:9c96ac6a51358063fa42af',
+    messagingSenderId: '860161320958',
+    projectId: 'fomo-connect-469702',
+    databaseURL: 'https://fomo-connect-469702-default-rtdb.firebaseio.com',
+    storageBucket: 'fomo-connect-469702.firebasestorage.app',
+    iosClientId: '860161320958-vs32l7ivbjn8901vc4oigfkk3uqhfq9a.apps.googleusercontent.com',
+    iosBundleId: 'com.terobytez.fomiiapp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyD3wMSQPFyrBd8H6frPEtsLXcR_Kv9lXTw',
-    appId: '1:625047258752:ios:cea8588a9bc53895904865',
-    messagingSenderId: '625047258752',
-    projectId: 'fomo-connect',
-    storageBucket: 'fomo-connect.firebasestorage.app',
-    androidClientId: '625047258752-hk1nqdrtvmq0v2l60qrdnip66m4t3s13.apps.googleusercontent.com',
-    iosClientId: '625047258752-6mjod1ecqibk1m2oll4lec57a5vot7td.apps.googleusercontent.com',
+    apiKey: 'AIzaSyDdubObvPPQa3XL4yRiRLA6sz4uDq58vTc',
+    appId: '1:860161320958:ios:d0b1822b7132d61bfa42af',
+    messagingSenderId: '860161320958',
+    projectId: 'fomo-connect-469702',
+    databaseURL: 'https://fomo-connect-469702-default-rtdb.firebaseio.com',
+    storageBucket: 'fomo-connect-469702.firebasestorage.app',
+    iosClientId: '860161320958-o0fa7if13g2pv0ik2s2olvs5ss0d06be.apps.googleusercontent.com',
     iosBundleId: 'com.example.fomoConnect',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyC2aQtR9Zgmbw2_iM73dVMnpsXKbV-C_vQ',
-    appId: '1:625047258752:web:6dc607217a0a9ce8904865',
-    messagingSenderId: '625047258752',
-    projectId: 'fomo-connect',
-    authDomain: 'fomo-connect.firebaseapp.com',
-    storageBucket: 'fomo-connect.firebasestorage.app',
-    measurementId: 'G-P7YCXVS5XD',
+    apiKey: 'AIzaSyDjnIMayj02tLm5H40S7DihNuWiFiya7Bg',
+    appId: '1:860161320958:web:21cfaacd774b3565fa42af',
+    messagingSenderId: '860161320958',
+    projectId: 'fomo-connect-469702',
+    authDomain: 'fomo-connect-469702.firebaseapp.com',
+    databaseURL: 'https://fomo-connect-469702-default-rtdb.firebaseio.com',
+    storageBucket: 'fomo-connect-469702.firebasestorage.app',
+    measurementId: 'G-E0Z1KJCBV3',
   );
 
 }

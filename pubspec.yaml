@@ -62,7 +62,6 @@ dependencies:
   hive: ^2.2.3
   path_provider: ^2.1.5
   upgrader: ^11.5.0
-  deepar_flutter_plus: ^0.2.0
   pin_code_fields: ^8.0.1
   flutter_contacts: ^1.1.9+2
   phone_numbers_parser: ^9.0.11
@@ -111,11 +110,6 @@ flutter:
   assets:
     - assets/
     - assets/lottie/
-    - assets/filters/
-    - assets/filters/Burning_Effect/
-    - assets/filters/Devil_Neon_Horns/
-    - assets/filters/Makeup_Look_w_Slipt_Screen_Effect/
-    - assets/filters/Pixel_Heart_Particles/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

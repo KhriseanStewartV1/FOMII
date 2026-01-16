@@ -171,6 +171,7 @@ class _UserProfileState extends State<UserProfile>
     final userName = widget.user['name'];
     return Scaffold(
       appBar: AppBar(
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 10),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(

@@ -51,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _getDeviceToken() async {
     NotificationService().pushToken(uid);
+    NotificationService().setupPushToken(uid);
     bool status = await NotificationService().requestNotificationPermission();
     print(status);
   }
@@ -135,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Consumer<BatchPostProvider>(
         builder: (context, batchProvider, _) {
           final posts = batchProvider.posts.values.toList();
-          if (posts.isEmpty) return Center(child: CircularProgressIndicator());
+          if (posts.isEmpty) return Center(child: Text("No Posts Found"));
           return RefreshIndicator(
             onRefresh: () async {
               batchProvider.setPosts(posts);
@@ -334,7 +335,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: _loadingMore
               ? Padding(
                   padding: const EdgeInsets.all(12.0),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(child: CircularProgressIndicator.adaptive()),
                 )
               : SizedBox.shrink(),
         ),
@@ -344,56 +345,119 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildToggle() {
     return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        spacing: 10,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextButton(
-            onPressed: () {
-              setState(() {
-                selectedTab = 0;
-              });
-            },
-            style: TextButton.styleFrom(
-              backgroundColor: selectedTab == 0
-                  ? Theme.of(context).colorScheme.onPrimary
-                  : Colors.transparent,
-              padding: EdgeInsets.symmetric(horizontal: 14.0, vertical: 0.0),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculate available width (with some padding)
+          final availableWidth = constraints.maxWidth - 32;
+
+          return Container(
+            constraints: BoxConstraints(maxWidth: 400), // Max width for tablets
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        selectedTab = 0;
+                      });
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: selectedTab == 0
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 8.0,
+                      ),
+                      minimumSize: const Size(0, 36),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        "For You",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: selectedTab == 0
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        selectedTab = 1;
+                      });
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: selectedTab == 1
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 8.0,
+                      ),
+                      minimumSize: const Size(0, 36),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        "Following",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: selectedTab == 1
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // const SizedBox(width: 8),
+                // Flexible(
+                //   child: TextButton(
+                //     onPressed: () {
+                //       setState(() {
+                //         selectedTab = 2; // Fixed: should be 2, not 1
+                //       });
+                //     },
+                //     style: TextButton.styleFrom(
+                //       backgroundColor: selectedTab == 2
+                //           ? Theme.of(context).colorScheme.onPrimary
+                //           : Colors.transparent,
+                //       padding: const EdgeInsets.symmetric(
+                //         horizontal: 12.0,
+                //         vertical: 8.0,
+                //       ),
+                //       minimumSize: const Size(0, 36),
+                //     ),
+                //     child: FittedBox(
+                //       fit: BoxFit.scaleDown,
+                //       child: Text(
+                //         "Circles",
+                //         style: GoogleFonts.poppins(
+                //           fontWeight: FontWeight.w500,
+                //           fontSize: 14,
+                //           color: selectedTab == 2
+                //               ? Theme.of(context).colorScheme.primary
+                //               : Colors.grey,
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // ),
+              ],
             ),
-            child: Text(
-              "For You",
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500,
-                color: selectedTab == 0
-                    ? Theme.of(context).colorScheme.primary
-                    : Colors.grey,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                selectedTab = 1;
-              });
-            },
-            style: TextButton.styleFrom(
-              backgroundColor: selectedTab == 1
-                  ? Theme.of(context).colorScheme.onPrimary
-                  : Colors.transparent,
-              padding: EdgeInsets.symmetric(horizontal: 14.0, vertical: 0.0),
-            ),
-            child: Text(
-              "Following",
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500,
-                color: selectedTab == 1
-                    ? Theme.of(context).colorScheme.primary
-                    : Colors.grey,
-              ),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

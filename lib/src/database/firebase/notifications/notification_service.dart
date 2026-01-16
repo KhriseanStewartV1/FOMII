@@ -63,6 +63,22 @@ class NotificationService {
     }
   }
 
+  Future<void> setupPushToken(String uid) async {
+    // iOS ONLY: wait for APNs token
+    if (Platform.isIOS) {
+      String? apnsToken;
+      while (apnsToken == null) {
+        apnsToken = await fcm.getAPNSToken();
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+    }
+
+    // Now it's safe
+    final fcmToken = await fcm.getToken();
+    await saveToken(uid, fcmToken ?? '');
+    debugPrint('FCM Token: $fcmToken');
+  }
+
   Future<String?> getToken(String uid) async {
     final doc = await db.collection("users").doc(uid).get();
     if (doc.exists) {
@@ -186,7 +202,7 @@ class NotificationService {
             isRead: false,
             receiverUid: AuthService().user!.uid,
           ),
-          receiverUid
+          receiverUid,
         );
         return true;
       } else {
@@ -228,7 +244,7 @@ class NotificationService {
 
   // ================================================
 
-  DatabaseReference _userNotiRef (String receiverUid) {
+  DatabaseReference _userNotiRef(String receiverUid) {
     final uid = _auth.currentUser?.uid;
     if (uid == null) throw Exception('User not signed in');
     return _db.ref('notifications/$receiverUid');
@@ -248,14 +264,19 @@ class NotificationService {
   }
 
   /// Add a notification
-  Future<void> addNotification(NotificationModel noti, String receiverUid) async {
+  Future<void> addNotification(
+    NotificationModel noti,
+    String receiverUid,
+  ) async {
     final newRef = _userNotiRef(receiverUid).push();
     await newRef.set(noti.toMap());
   }
 
   /// Mark a single notification as read
   Future<void> markAsRead(String id) async {
-    await _userNotiRef(AuthService().user!.uid).child(id).update({'isRead': true});
+    await _userNotiRef(
+      AuthService().user!.uid,
+    ).child(id).update({'isRead': true});
   }
 
   /// Mark all notifications as read

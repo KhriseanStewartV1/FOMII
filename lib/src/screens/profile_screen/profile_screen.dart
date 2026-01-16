@@ -637,7 +637,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       ),
-                      BadgesWidget(verified: verified, betaTester: tester, tenPost: posts1,)
+                      BadgesWidget(
+                        verified: verified,
+                        betaTester: tester,
+                        tenPost: posts1,
+                      ),
                     ],
                   ),
                   Row(
@@ -807,6 +811,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
         final posts = snap.data!;
+        print(posts);
         return ListView.builder(
           physics: const NeverScrollableScrollPhysics(),
           shrinkWrap: true,

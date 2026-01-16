@@ -6,8 +6,6 @@ import 'package:fomo_connect/src/database/bootstrap/bootstrap.dart';
 import 'package:fomo_connect/src/database/firebase/notifications/notification_service.dart';
 import 'package:fomo_connect/src/database/provider/dark_mode.dart';
 import 'package:fomo_connect/src/database/provider/post_provider.dart';
-import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -15,8 +13,16 @@ Future<void> initLocalNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher'); // your app icon
 
+  const DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
+    iOS: initializationSettingsIOS,
   );
 
   await FlutterLocalNotificationsPlugin().initialize(
@@ -28,11 +34,16 @@ Future<void> initLocalNotifications() async {
   );
 }
 
+Future<void> requestIOSPermission() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  await messaging.requestPermission(alert: true, badge: true, sound: true);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initFirebase();
-  final dir = await getApplicationDocumentsDirectory();
-  Hive.init(dir.path);
+  await requestIOSPermission();
   runApp(
     MultiProvider(
       providers: [
@@ -94,10 +105,7 @@ class _MyAppState extends State<MyApp> {
       routes: AppRouter.routes,
       initialRoute: AppRouter.splash,
       debugShowCheckedModeBanner: false,
-      localizationsDelegates: const [
-      FlutterQuillLocalizations.delegate,
-
-  ]
+      localizationsDelegates: const [FlutterQuillLocalizations.delegate],
     );
   }
 }
